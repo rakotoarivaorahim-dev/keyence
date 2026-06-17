@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KEYENCE — Collecteur d'images</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f4f4f5;
+            color: #18181b;
+            padding: 30px;
+        }
+
+        h1 {
+            font-size: 1.4em;
+            color: #dc2626;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            font-size: 0.9em;
+            color: #71717a;
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1em;
+            font-weight: 700;
+            color: #3f3f46;
+            margin-bottom: 12px;
+            padding-left: 10px;
+            border-left: 4px solid #dc2626;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: #fff;
+            border: 2px dashed #d4d4d8;
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+
+        .card:hover { border-color: #dc2626; }
+
+        .card.dragover {
+            border-color: #dc2626;
+            background: #fff1f1;
+            box-shadow: 0 0 0 4px rgba(220,38,38,0.1);
+        }
+
+        .card.done {
+            border-style: solid;
+            border-color: #16a34a;
+        }
+
+        .card.done::after {
+            content: '✓';
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            color: #16a34a;
+            font-weight: 700;
+            font-size: 0.85em;
+        }
+
+        .preview {
+            width: 100px;
+            height: 80px;
+            object-fit: contain;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .placeholder {
+            width: 100px;
+            height: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            color: #a1a1aa;
+            font-size: 0.75em;
+            text-align: center;
+        }
+
+        .placeholder svg {
+            width: 32px;
+            height: 32px;
+            stroke: #d4d4d8;
+            fill: none;
+        }
+
+        .card-label {
+            font-size: 0.8em;
+            font-weight: 700;
+            text-align: center;
+            color: #3f3f46;
+        }
+
+        .card-desc {
+            font-size: 0.7em;
+            color: #a1a1aa;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        input[type="file"] { display: none; }
+
+        .progress-bar {
+            background: #e4e4e7;
+            border-radius: 99px;
+            height: 8px;
+            margin-bottom: 6px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: #dc2626;
+            height: 100%;
+            border-radius: 99px;
+            transition: width 0.3s;
+            width: 0%;
+        }
+
+        .progress-label {
+            font-size: 0.85em;
+            color: #71717a;
+            margin-bottom: 20px;
+        }
+
+        .btn-export {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-export:hover { background: #b91c1c; transform: translateY(-1px); }
+        .btn-export:disabled { background: #d4d4d8; cursor: not-allowed; transform: none; }
+
+        .btn-reset {
+            background: transparent;
+            color: #71717a;
+            border: 1px solid #d4d4d8;
+            padding: 14px 24px;
+            border-radius: 10px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: 10px;
+        }
+
+        .btn-reset:hover { border-color: #dc2626; color: #dc2626; }
+
+        .actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #16a34a;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9em;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            transform: translateY(60px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        }
+
+        .toast.show { transform: translateY(0); opacity: 1; }
+
+        .tip {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1d4ed8;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.82em;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🔌 KEYENCE — Collecteur d'images</h1>
+    <p class="subtitle">Glisse ou clique pour ajouter l'image de chaque élément. Exporte ensuite le fichier JSON.</p>
+
+    <div class="tip">
+        💡 <strong>Mode d'emploi :</strong> Clique sur une carte <em>ou</em> glisse-dépose une image dessus.
+        Quand toutes les cases sont remplies, clique sur <strong>Exporter le JSON</strong> et envoie-moi le fichier.
+    </div>
+
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <p class="progress-label" id="progressLabel">0 / 11 images ajoutées</p>
+
+    <!-- Capteurs -->
+    <p class="section-title">Capteurs (une image par gamme)</p>
+    <div class="grid" id="sensorGrid"></div>
+
+    <!-- Module NQ -->
+    <p class="section-title">Module NQ</p>
+    <div class="grid" id="nqGrid"></div>
+
+    <div class="actions">
+        <button class="btn-export" id="btnExport" onclick="exportJSON()" disabled>
+            ⬇️ Exporter le JSON
+        </button>
+        <button class="btn-reset" onclick="resetAll()">Tout réinitialiser</button>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const ITEMS = [
+            { id: 'FD-H',   label: 'FD-H',   desc: 'Débitmètre haute précision',  group: 'sensor' },
+            { id: 'FD-R',   label: 'FD-R',   desc: 'Débitmètre résistant',         group: 'sensor' },
+            { id: 'FR',     label: 'FR',     desc: 'Capteur de niveau',            group: 'sensor' },
+            { id: 'MP-F',   label: 'MP-F',   desc: 'Débitmètre MP-F',             group: 'sensor' },
+            { id: 'FD-X',   label: 'FD-X',   desc: 'Débitmètre à clipser',        group: 'sensor' },
+            { id: 'FI-T',   label: 'FI-T',   desc: 'Débitmètre insertion',         group: 'sensor' },
+            { id: 'FI-C',   label: 'FI-C',   desc: 'Débitmètre compact',          group: 'sensor' },
+            { id: 'FD-E',   label: 'FD-E',   desc: 'Débitmètre FD-E',             group: 'sensor' },
+            { id: 'FD-Q',   label: 'FD-Q',   desc: 'Débitmètre à clipser',        group: 'sensor' },
+            { id: 'GP-MT',  label: 'GP-MT',  desc: 'Capteur de pression IO-Link', group: 'sensor' },
+            { id: 'NQ-MP8L',label: 'NQ-MP8L',desc: 'Module maître IO-Link',       group: 'nq'     },
+        ];
+
+        const images = {};
+
+        function buildCards() {
+            const sensorGrid = document.getElementById('sensorGrid');
+            const nqGrid     = document.getElementById('nqGrid');
+
+            ITEMS.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.id = `card-${item.id}`;
+                card.innerHTML = `
+                    <img class="preview" id="img-${item.id}" alt="${item.label}">
+                    <div class="placeholder" id="ph-${item.id}">
+                        <svg viewBox="0 0 24 24" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                        Glisse une image<br>ou clique
+                    </div>
+                    <div class="card-label">${item.label}</div>
+                    <div class="card-desc">${item.desc}</div>
+                    <input type="file" id="file-${item.id}" accept="image/*">
+                `;
+
+                card.addEventListener('click', () => document.getElementById(`file-${item.id}`).click());
+
+                card.addEventListener('dragover', e => { e.preventDefault(); card.classList.add('dragover'); });
+                card.addEventListener('dragleave', () => card.classList.remove('dragover'));
+                card.addEventListener('drop', e => {
+                    e.preventDefault();
+                    card.classList.remove('dragover');
+                    const file = e.dataTransfer.files[0];
+                    if (file && file.type.startsWith('image/')) loadImage(item.id, file);
+                });
+
+                document.getElementById(`file-${item.id}`) // will be set after append
+                card.querySelector('input[type="file"]').addEventListener('change', e => {
+                    const file = e.target.files[0];
+                    if (file) loadImage(item.id, file);
+                });
+
+                (item.group === 'nq' ? nqGrid : sensorGrid).appendChild(card);
+            });
+        }
+
+        function loadImage(id, file) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const base64 = e.target.result;
+                images[id] = base64;
+
+                const img = document.getElementById(`img-${id}`);
+                const ph  = document.getElementById(`ph-${id}`);
+                const card = document.getElementById(`card-${id}`);
+
+                img.src = base64;
+                img.style.display = 'block';
+                ph.style.display  = 'none';
+                card.classList.add('done');
+
+                updateProgress();
+                showToast(`✓ ${id} ajouté !`);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateProgress() {
+            const done  = Object.keys(images).length;
+            const total = ITEMS.length;
+            const pct   = Math.round((done / total) * 100);
+
+            document.getElementById('progressFill').style.width  = `${pct}%`;
+            document.getElementById('progressLabel').textContent = `${done} / ${total} images ajoutées`;
+            document.getElementById('btnExport').disabled = (done === 0);
+        }
+
+        function exportJSON() {
+            const done  = Object.keys(images).length;
+            const total = ITEMS.length;
+
+            const output = {
+                exportDate: new Date().toISOString(),
+                complete: done === total,
+                missing: ITEMS.map(i => i.id).filter(id => !images[id]),
+                images
+            };
+
+            const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href     = url;
+            a.download = `keyence-images${done < total ? '-partiel' : ''}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast(`✅ JSON exporté (${done}/${total} images)`);
+        }
+
+        function resetAll() {
+            if (!confirm('Réinitialiser toutes les images ?')) return;
+            for (const key in images) delete images[key];
+            ITEMS.forEach(item => {
+                document.getElementById(`img-${item.id}`).style.display = 'none';
+                document.getElementById(`ph-${item.id}`).style.display  = 'flex';
+                document.getElementById(`card-${item.id}`).classList.remove('done');
+            });
+            updateProgress();
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2500);
+        }
+
+        buildCards();
+    </script>
+</body>
+</html>
