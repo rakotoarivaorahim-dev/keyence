@@ -461,6 +461,8 @@ function init() {
         if (g === 'power')  { powerCableLength   = btn.dataset.length; updateSchema(); }
         if (g === 'network'){ networkCableLength  = btn.dataset.length; updateSchema(); }
     });
+    const ro = new ResizeObserver(() => { if (selectedSensors.length) updateSchema(); });
+    ro.observe(document.getElementById('schemaContent'));
 }
 
 function populateSensorSeries() {
@@ -588,30 +590,66 @@ function updateSchema() {
         return;
     }
 
-    const M      = Math.ceil(N / PORTS_PER_MODULE);
-    const SVG_H  = SC.TOP_PAD + N * SC.SLOT_H + SC.BOT_PAD;
-    const SVG_W  = SC.SVG_W;
-    const POW_CY = Math.round(SC.TOP_PAD / 2);
-    const PC_CY  = SVG_H - Math.round(SC.BOT_PAD / 2);
+    /* ── Dimensions dynamiques ── */
+    const cW = Math.max(container.clientWidth  || 720, 500);
+    const cH = Math.max(container.clientHeight || 600, 300);
+    const xScale = cW / 720;
 
-    const p = [];  // SVG parts
+    const TOP_PAD  = Math.max(60,  Math.round(cH * 0.09));
+    const BOT_PAD  = Math.max(80,  Math.round(cH * 0.10));
+    const MIN_SLOT = 62;
+    const SLOT_H   = Math.max(MIN_SLOT, Math.floor((cH - TOP_PAD - BOT_PAD) / N));
+    const SVG_H    = (SLOT_H > MIN_SLOT) ? cH : TOP_PAD + N * MIN_SLOT + BOT_PAD;
+    const SVG_W    = cW;
+
+    const IMG_H    = Math.max(30, Math.min(SC.IMG_H, SLOT_H - 16));
+    const IMG_W    = Math.round(SC.IMG_W * Math.min(xScale, IMG_H / SC.IMG_H));
+    const IMG_X    = Math.round(SC.IMG_X * xScale);
+    const MOD_W    = Math.round(SC.MOD_W * xScale);
+    const MOD_H    = Math.max(60, Math.round(SC.MOD_H * (SLOT_H / SC.SLOT_H)));
+    const BUS_X    = Math.round(SC.BUS_X  * xScale);
+    const MOD_X    = Math.round(SC.MOD_X  * xScale);
+    const MOD_RIGHT = MOD_X + MOD_W;
+    const CAS_BX   = Math.round(SC.CAS_BX * xScale);
+    const CAS_GX   = Math.round(SC.CAS_GX * xScale);
+    const TURN_X   = Math.round(SC.TURN_X * xScale);
+    const POWER_CX = Math.round(SC.POWER_CX * xScale);
+    const POWER_R  = SC.POWER_R;
+    const PC_CX    = Math.round(SC.PC_CX * xScale);
+    const PC_W     = Math.round(SC.PC_W  * xScale);
+    const PC_H     = SC.PC_H;
+
+    const POW_CY = Math.round(TOP_PAD / 2);
+    const PC_CY  = SVG_H - Math.round(BOT_PAD / 2);
+
+    function _modGeom(mi) {
+        const s0  = mi * PORTS_PER_MODULE;
+        const sN  = Math.min(s0 + PORTS_PER_MODULE, N);
+        const fy  = TOP_PAD + s0 * SLOT_H + IMG_H / 2;
+        const ly  = TOP_PAD + (sN - 1) * SLOT_H + IMG_H / 2;
+        const midY = Math.round((fy + ly) / 2);
+        return { top: midY - Math.round(MOD_H / 2), midY };
+    }
+
+    const M = Math.ceil(N / PORTS_PER_MODULE);
+    const p = [];
 
     /* ── Capteurs ── */
     for (let i = 0; i < N; i++) {
         const s   = selectedSensors[i];
-        const iy  = SC.TOP_PAD + i * SC.SLOT_H;
-        const cy  = iy + SC.IMG_H / 2;
+        const iy  = TOP_PAD + i * SLOT_H;
+        const cy  = iy + IMG_H / 2;
         const src = imageData[s.seriesName] || '';
 
-        if (src) p.push(`<image href="${src}" x="${SC.IMG_X}" y="${iy}" width="${SC.IMG_W}" height="${SC.IMG_H}" preserveAspectRatio="xMidYMid meet"/>`);
-        p.push(`<text x="${SC.IMG_X + SC.IMG_W/2}" y="${iy + SC.IMG_H + 11}" text-anchor="middle" font-size="8.5" fill="#666" font-family="Segoe UI,Arial,sans-serif">${esc(s.name)}</text>`);
+        if (src) p.push(`<image href="${src}" x="${IMG_X}" y="${iy}" width="${IMG_W}" height="${IMG_H}" preserveAspectRatio="xMidYMid meet"/>`);
+        p.push(`<text x="${IMG_X + IMG_W/2}" y="${iy + IMG_H + 11}" text-anchor="middle" font-size="8.5" fill="#666" font-family="Segoe UI,Arial,sans-serif">${esc(s.name)}</text>`);
 
         /* Ligne capteur → bus */
-        p.push(`<line x1="${SC.IMG_X + SC.IMG_W + 2}" y1="${cy}" x2="${SC.BUS_X}" y2="${cy}" stroke="#ccc" stroke-width="1.5"/>`);
+        p.push(`<line x1="${IMG_X + IMG_W + 2}" y1="${cy}" x2="${BUS_X}" y2="${cy}" stroke="#ccc" stroke-width="1.5"/>`);
 
         /* Label câble sur la ligne */
-        const ci  = getCableInfo(s);
-        const lx  = Math.round((SC.IMG_X + SC.IMG_W + 2 + SC.BUS_X) / 2);
+        const ci = getCableInfo(s);
+        const lx = Math.round((IMG_X + IMG_W + 2 + BUS_X) / 2);
         p.push(svgLabel(lx, cy - 8, `${ci.model} • ${s.cableLength}`, '#aaa'));
     }
 
@@ -619,59 +657,58 @@ function updateSchema() {
     for (let mi = 0; mi < M; mi++) {
         const s0  = mi * PORTS_PER_MODULE;
         const sN  = Math.min(s0 + PORTS_PER_MODULE, N);
-        const fy  = SC.TOP_PAD + s0 * SC.SLOT_H + SC.IMG_H / 2;
-        const ly  = SC.TOP_PAD + (sN-1) * SC.SLOT_H + SC.IMG_H / 2;
-        const { top: mTop, midY: mMid } = modGeom(mi);
+        const fy  = TOP_PAD + s0 * SLOT_H + IMG_H / 2;
+        const ly  = TOP_PAD + (sN-1) * SLOT_H + IMG_H / 2;
+        const { top: mTop, midY: mMid } = _modGeom(mi);
 
         /* Bus vertical */
-        if (sN - s0 > 1) p.push(`<line x1="${SC.BUS_X}" y1="${fy}" x2="${SC.BUS_X}" y2="${ly}" stroke="#ccc" stroke-width="1.5"/>`);
+        if (sN - s0 > 1) p.push(`<line x1="${BUS_X}" y1="${fy}" x2="${BUS_X}" y2="${ly}" stroke="#ccc" stroke-width="1.5"/>`);
 
         /* Bus → module */
-        p.push(`<line x1="${SC.BUS_X}" y1="${mMid}" x2="${SC.MOD_X}" y2="${mMid}" stroke="#ccc" stroke-width="1.5"/>`);
+        p.push(`<line x1="${BUS_X}" y1="${mMid}" x2="${MOD_X}" y2="${mMid}" stroke="#ccc" stroke-width="1.5"/>`);
 
         /* Image module */
         const nqSrc = imageData['NQ-MP8L'] || '';
-        if (nqSrc) p.push(`<image href="${nqSrc}" x="${SC.MOD_X}" y="${mTop}" width="${SC.MOD_W}" height="${SC.MOD_H}" preserveAspectRatio="xMidYMid meet"/>`);
+        if (nqSrc) p.push(`<image href="${nqSrc}" x="${MOD_X}" y="${mTop}" width="${MOD_W}" height="${MOD_H}" preserveAspectRatio="xMidYMid meet"/>`);
 
         /* Labels module */
-        p.push(`<text x="${SC.MOD_X + SC.MOD_W/2}" y="${mTop + SC.MOD_H + 13}" text-anchor="middle" font-size="9" font-weight="600" fill="#333" font-family="Segoe UI,Arial,sans-serif">NQ-MP8L${M>1?' #'+(mi+1):''}</text>`);
-        p.push(`<text x="${SC.MOD_X + SC.MOD_W/2}" y="${mTop + SC.MOD_H + 24}" text-anchor="middle" font-size="7.5" fill="#999" font-family="Segoe UI,Arial,sans-serif">${sN-s0}/${PORTS_PER_MODULE} ports</text>`);
+        p.push(`<text x="${MOD_X + MOD_W/2}" y="${mTop + MOD_H + 13}" text-anchor="middle" font-size="9" font-weight="600" fill="#333" font-family="Segoe UI,Arial,sans-serif">NQ-MP8L${M>1?' #'+(mi+1):''}</text>`);
+        p.push(`<text x="${MOD_X + MOD_W/2}" y="${mTop + MOD_H + 24}" text-anchor="middle" font-size="7.5" fill="#999" font-family="Segoe UI,Arial,sans-serif">${sN-s0}/${PORTS_PER_MODULE} ports</text>`);
     }
 
     /* ── Alimentation (bleu) → Module 1 ── */
-    const m0 = modGeom(0);
-    const powPortY = m0.top + Math.round(SC.MOD_H * 0.28);
+    const m0 = _modGeom(0);
+    const powPortY = m0.top + Math.round(MOD_H * 0.28);
 
-    p.push(`<polyline points="${SC.MOD_RIGHT},${powPortY} ${SC.TURN_X},${powPortY} ${SC.TURN_X},${POW_CY} ${SC.POWER_CX - SC.POWER_R},${POW_CY}" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`);
-    p.push(svgLabel(Math.round((SC.MOD_RIGHT + SC.TURN_X) / 2), powPortY - 10, `${getPowerCable()} • ${powerCableLength}`, '#3b82f6'));
+    p.push(`<polyline points="${MOD_RIGHT},${powPortY} ${TURN_X},${powPortY} ${TURN_X},${POW_CY} ${POWER_CX - POWER_R},${POW_CY}" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`);
+    p.push(svgLabel(Math.round((MOD_RIGHT + TURN_X) / 2), powPortY - 10, `${getPowerCable()} • ${powerCableLength}`, '#3b82f6'));
 
     /* Icône alimentation */
-    p.push(`<circle cx="${SC.POWER_CX}" cy="${POW_CY}" r="${SC.POWER_R}" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/>`);
-    p.push(`<text x="${SC.POWER_CX}" y="${POW_CY + 9}" text-anchor="middle" dominant-baseline="middle" font-size="24">⚡</text>`);
+    p.push(`<circle cx="${POWER_CX}" cy="${POW_CY}" r="${POWER_R}" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/>`);
+    p.push(`<text x="${POWER_CX}" y="${POW_CY + 9}" text-anchor="middle" dominant-baseline="middle" font-size="24">⚡</text>`);
 
     /* ── Réseau (vert) → Dernier module ── */
-    const mLast = modGeom(M - 1);
-    const pcPortY = mLast.top + Math.round(SC.MOD_H * 0.72);
-    const TX2 = SC.TURN_X + 18;
+    const mLast = _modGeom(M - 1);
+    const pcPortY = mLast.top + Math.round(MOD_H * 0.72);
+    const TX2 = TURN_X + 18;
 
-    p.push(`<polyline points="${SC.MOD_RIGHT},${pcPortY} ${TX2},${pcPortY} ${TX2},${PC_CY} ${SC.PC_CX - SC.PC_W/2},${PC_CY}" fill="none" stroke="#10b981" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`);
-    p.push(svgLabel(Math.round((SC.MOD_RIGHT + TX2) / 2), pcPortY + 12, `${getNetworkCable()} • ${networkCableLength}`, '#10b981'));
+    p.push(`<polyline points="${MOD_RIGHT},${pcPortY} ${TX2},${pcPortY} ${TX2},${PC_CY} ${PC_CX - PC_W/2},${PC_CY}" fill="none" stroke="#10b981" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`);
+    p.push(svgLabel(Math.round((MOD_RIGHT + TX2) / 2), pcPortY + 12, `${getNetworkCable()} • ${networkCableLength}`, '#10b981'));
 
     /* Icône PC */
-    const pcX = SC.PC_CX - SC.PC_W / 2;
-    p.push(laptopSVG(pcX, PC_CY - SC.PC_H / 2, SC.PC_W, SC.PC_H));
+    p.push(laptopSVG(PC_CX - PC_W / 2, PC_CY - PC_H / 2, PC_W, PC_H));
 
     /* ── Cascade entre modules ── */
     for (let mi = 0; mi < M - 1; mi++) {
-        const mA = modGeom(mi);
-        const mB = modGeom(mi + 1);
-        const y1 = mA.top + SC.MOD_H;
-        const y2 = mB.top;
+        const mA = _modGeom(mi);
+        const mB = _modGeom(mi + 1);
+        const y1  = mA.top + MOD_H;
+        const y2  = mB.top;
         const cy2 = Math.round((y1 + y2) / 2);
 
-        p.push(`<line x1="${SC.CAS_BX}" y1="${y1}" x2="${SC.CAS_BX}" y2="${y2}" stroke="#3b82f6" stroke-width="2.5"/>`);
-        p.push(`<line x1="${SC.CAS_GX}" y1="${y1}" x2="${SC.CAS_GX}" y2="${y2}" stroke="#10b981" stroke-width="2.5"/>`);
-        p.push(svgLabel(SC.CAS_BX + 38, cy2, 'OP-88089 • 2m', '#8b5cf6'));
+        p.push(`<line x1="${CAS_BX}" y1="${y1}" x2="${CAS_BX}" y2="${y2}" stroke="#3b82f6" stroke-width="2.5"/>`);
+        p.push(`<line x1="${CAS_GX}" y1="${y1}" x2="${CAS_GX}" y2="${y2}" stroke="#10b981" stroke-width="2.5"/>`);
+        p.push(svgLabel(CAS_BX + 38, cy2, 'OP-88089 • 2m', '#8b5cf6'));
     }
 
     container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${SVG_W}" height="${SVG_H}" style="display:block;">
