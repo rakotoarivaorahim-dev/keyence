@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KEYENCE Cable Configurator - Série NQ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.05; }
+            50% { opacity: 0.15; }
+        }
+
+        .background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(220, 38, 38, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(220, 38, 38, 0.1) 0%, transparent 50%);
+            animation: pulse 4s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 15px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            padding: 15px 25px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #dc2626;
+            box-shadow: 0 0 30px rgba(220, 38, 38, 0.2);
+        }
+
+        .header h1 {
+            font-size: 1.5em;
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 3px;
+        }
+
+        .header p {
+            color: #9ca3af;
+            font-size: 0.85em;
+        }
+
+        .selection-section {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #333;
+        }
+
+        .selection-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            gap: 15px;
+        }
+
+        .selection-column {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .selection-title {
+            font-size: 1em;
+            color: #dc2626;
+            font-weight: 600;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #dc2626;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            background: #2a2a2a;
+            border: 2px solid #333;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        select:hover { border-color: #dc2626; }
+
+        select:focus {
+            outline: none;
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        }
+
+        .models-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+
+        .model-card {
+            background: #2a2a2a;
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .model-card:hover {
+            border-color: #dc2626;
+            background: #333;
+            transform: translateY(-2px);
+        }
+
+        .model-card.selected {
+            border-color: #dc2626;
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            box-shadow: 0 0 10px rgba(220, 38, 38, 0.3);
+        }
+
+        .model-icon { font-size: 1.5em; }
+        .model-name { font-size: 0.75em; font-weight: 600; }
+
+        .cable-length-selector {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .length-btn {
+            flex: 1;
+            padding: 8px;
+            background: #2a2a2a;
+            border: 2px solid #333;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .length-btn:hover { border-color: #dc2626; }
+        .length-btn.active { background: #dc2626; border-color: #dc2626; }
+
+        .btn-add {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+
+        .btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(220, 38, 38, 0.4);
+        }
+
+        .btn-add:disabled {
+            background: #333;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* FIX #3 : feedback visuel après ajout */
+        .btn-add.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .selected-sensors-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .sensor-tag {
+            background: #2a2a2a;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border-left: 4px solid #dc2626;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+            font-size: 0.85em;
+        }
+
+        .sensor-tag:hover { background: #333; }
+
+        .sensor-tag-info { flex: 1; }
+        .sensor-tag-name { font-weight: 600; margin-bottom: 2px; }
+        .sensor-tag-desc { font-size: 0.85em; color: #9ca3af; }
+
+        .btn-remove {
+            background: #991b1b;
+            border: none;
+            color: white;
+            width: 25px;
+            height: 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.2s;
+        }
+
+        .btn-remove:hover { background: #dc2626; }
+
+        .schema-section {
+            flex: 1;
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid #333;
+            overflow-y: auto;
+        }
+
+        .schema-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .module-group {
+            display: grid;
+            grid-template-columns: 200px 1fr 250px;
+            gap: 20px;
+            align-items: start;
+            padding: 15px;
+            background: #0a0a0a;
+            border-radius: 12px;
+            border: 2px solid #333;
+            position: relative;
+        }
+
+        .module-group.cascade { border-color: #8b5cf6; }
+
+        .cascade-indicator {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #8b5cf6;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .schema-column {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .schema-column-title {
+            font-size: 1em;
+            color: #dc2626;
+            font-weight: 600;
+            text-align: center;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #dc2626;
+        }
+
+        .schema-sensor {
+            background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid #dc2626;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 10px rgba(220, 38, 38, 0.2);
+            transition: all 0.3s;
+        }
+
+        .schema-sensor:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+        }
+
+        .sensor-image {
+            width: 40px;
+            height: 40px;
+            background: #333;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            border: 2px solid #dc2626;
+            flex-shrink: 0;
+        }
+
+        .sensor-info { flex: 1; }
+        .schema-sensor-name { font-weight: 700; font-size: 0.9em; margin-bottom: 2px; }
+        .schema-sensor-connector { font-size: 0.75em; color: #9ca3af; }
+
+        .schema-cables {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            gap: 10px;
+        }
+
+        .cable-connection {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cable-line {
+            flex: 1;
+            height: 3px;
+            border-radius: 2px;
+            position: relative;
+        }
+
+        /* FIX #2 : couleur visible pour les câbles capteur (gris clair au lieu de noir) */
+        .cable-line.sensor-cable {
+            background: linear-gradient(90deg, #555 0%, #aaa 50%, #555 100%);
+        }
+
+        .cable-line.power-cable {
+            background: linear-gradient(90deg, #10b981 0%, #34d399 50%, #10b981 100%);
+        }
+
+        .cable-line.network-cable {
+            background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 50%, #3b82f6 100%);
+        }
+
+        .cable-line.cascade-cable {
+            background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 50%, #8b5cf6 100%);
+        }
+
+        .cable-info-box {
+            background: #2a2a2a;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 2px solid;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .cable-info-box.sensor-cable { border-color: #aaa; }
+        .cable-info-box.power-cable { border-color: #10b981; }
+        .cable-info-box.network-cable { border-color: #3b82f6; }
+        .cable-info-box.cascade-cable { border-color: #8b5cf6; }
+
+        .cable-model { font-weight: 700; font-size: 0.85em; margin-bottom: 2px; }
+        .cable-specs { font-size: 0.7em; color: #9ca3af; }
+
+        .nq-module-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .schema-nq {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+            border: 2px solid #ef4444;
+        }
+
+        .nq-image {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .schema-nq-name { font-weight: 700; font-size: 1.1em; margin-bottom: 8px; }
+        .schema-nq-desc { font-size: 0.8em; opacity: 0.9; margin-bottom: 10px; line-height: 1.3; }
+        .schema-nq-ports {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 6px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .nq-connections {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 0.65em;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+
+        .badge-iolink { background: #10b981; color: white; }
+        .badge-8pin { background: #fbbf24; color: #0a0a0a; }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6b7280;
+        }
+
+        .empty-state-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { background: #dc2626; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #ef4444; }
+
+        .btn-export {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .btn-export:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+
+        .alert {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85em;
+        }
+
+        .alert-warning {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid #fbbf24;
+            color: #fbbf24;
+        }
+
+        .alert-info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid #3b82f6;
+            color: #3b82f6;
+        }
+
+        /* FIX #4 : toast de notification non-bloquant */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #10b981;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9em;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+            z-index: 9999;
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        @media (max-width: 1400px) {
+            .module-group { grid-template-columns: 1fr; gap: 15px; }
+            .models-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-animation"></div>
+    <div class="toast" id="toast"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🔌 KEYENCE Cable Configurator</h1>
+            <p>Configuration intelligente de câbles pour modules Série NQ</p>
+        </div>
+
+        <div class="selection-section">
+            <div class="selection-grid">
+                <!-- Colonne 1 : Sélection gamme et modèle -->
+                <div class="selection-column">
+                    <div class="selection-title">1️⃣ Sélection du Capteur</div>
+
+                    <select id="sensorSeries" onchange="updateSensorModels()">
+                        <option value="">-- Sélectionnez une gamme --</option>
+                    </select>
+
+                    <div id="modelsGrid" class="models-grid" style="display: none;"></div>
+
+                    <div id="cableLengthSelector" style="display: none;">
+                        <label style="font-size: 0.85em; color: #9ca3af; margin-bottom: 5px; display: block;">Longueur du câble capteur :</label>
+                        <!-- FIX #1 : 2m actif par défaut dès l'affichage -->
+                        <div class="cable-length-selector" id="sensorLengthBtns">
+                            <button class="length-btn active" data-group="sensor" data-length="2m">2m</button>
+                            <button class="length-btn" data-group="sensor" data-length="5m">5m</button>
+                            <button class="length-btn" data-group="sensor" data-length="10m">10m</button>
+                        </div>
+                    </div>
+
+                    <button class="btn-add" id="btnAddSensor" onclick="addSensor()" disabled>
+                        ➕ Ajouter le capteur
+                    </button>
+                </div>
+
+                <!-- Colonne 2 : Liste des capteurs sélectionnés -->
+                <div class="selection-column">
+                    <div class="selection-title">📋 Capteurs Sélectionnés (<span id="sensorCount">0</span>)</div>
+                    <div id="selectedSensorsList" class="selected-sensors-list">
+                        <div class="empty-state" style="padding: 15px;">
+                            <p style="font-size: 0.85em;">Aucun capteur sélectionné</p>
+                        </div>
+                    </div>
+                    <button class="btn-export" onclick="exportShoppingList()">
+                        📄 Exporter la liste de courses
+                    </button>
+                </div>
+
+                <!-- Colonne 3 : Modules NQ requis -->
+                <div class="selection-column">
+                    <div class="selection-title">2️⃣ Modules NQ Requis (<span id="nqCount">0</span>)</div>
+                    <div id="nqModulesList" class="selected-sensors-list">
+                        <div class="empty-state" style="padding: 15px;">
+                            <p style="font-size: 0.85em;">Ajoutez des capteurs</p>
+                        </div>
+                    </div>
+
+                    <div id="powerCableSelector" style="display: none; margin-top: 10px;">
+                        <label style="font-size: 0.85em; color: #9ca3af; margin-bottom: 5px; display: block;">Longueur câble alimentation :</label>
+                        <div class="cable-length-selector">
+                            <button class="length-btn power-length" data-group="power" data-length="2m">2m</button>
+                            <button class="length-btn power-length" data-group="power" data-length="5m">5m</button>
+                            <button class="length-btn power-length active" data-group="power" data-length="10m">10m</button>
+                        </div>
+                    </div>
+
+                    <div id="networkCableSelector" style="display: none; margin-top: 10px;">
+                        <label style="font-size: 0.85em; color: #9ca3af; margin-bottom: 5px; display: block;">Longueur câble Ethernet :</label>
+                        <div class="cable-length-selector">
+                            <button class="length-btn network-length active" data-group="network" data-length="2m">2m</button>
+                            <button class="length-btn network-length" data-group="network" data-length="5m">5m</button>
+                            <button class="length-btn network-length" data-group="network" data-length="10m">10m</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="schema-section">
+            <div id="schemaContent" class="schema-layout">
+                <div class="empty-state">
+                    <div class="empty-state-icon">🔌</div>
+                    <h3>Ajoutez des capteurs pour voir le schéma</h3>
+                    <p>Sélectionnez une gamme, puis un modèle de capteur</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PORTS_PER_MODULE = 8;
+
+        const sensorDatabase = {
+            'FD-H': {
+                name: 'FD-H',
+                fullName: 'Débitmètre haute précision',
+                icon: '💧',
+                models: [
+                    { code: 'FD-H10',  name: 'FD-H10',  connector: 'M12', pins: 4, ioLink: true },
+                    { code: 'FD-H20',  name: 'FD-H20',  connector: 'M12', pins: 4, ioLink: true },
+                    { code: 'FD-H32',  name: 'FD-H32',  connector: 'M12', pins: 4, ioLink: true },
+                    { code: 'FD-H10K', name: 'FD-H10K', connector: 'M12', pins: 4, ioLink: true },
+                    { code: 'FD-H20K', name: 'FD-H20K', connector: 'M12', pins: 4, ioLink: true },
+                    { code: 'FD-H32K', name: 'FD-H32K', connector: 'M12', pins: 4, ioLink: true },
+                    { code: 'FD-H22F', name: 'FD-H22F', connector: 'M12', pins: 4, ioLink: true },
+                    { code: 'FD-H32F', name: 'FD-H32F', connector: 'M12', pins: 4, ioLink: true },
+                    { code: 'FD-H47F', name: 'FD-H47F', connector: 'M12', pins: 4, ioLink: true },
+                    { code: 'FD-H63F', name: 'FD-H63F', connector: 'M12', pins: 4, ioLink: true }
+                ]
+            },
+            'FD-R': {
+                name: 'FD-R',
+                fullName: 'Débitmètre résistant',
+                icon: '🌊',
+                models: [
+                    { code: 'FD-R50',  name: 'FD-R50',  connector: 'M12', pins: 4, ioLink: true },
+                    { code: 'FD-R80',  name: 'FD-R80',  connector: 'M12', pins: 4, ioLink: true },
+                    { code: 'FD-R125', name: 'FD-R125', connector: 'M12', pins: 4, ioLink: true },
+                    { code: 'FD-R200', name: 'FD-R200', connector: 'M12', pins: 4, ioLink: true }
+                ]
+            },
+            'FR': {
+                name: 'FR',
+                fullName: 'Capteur de niveau',
+                icon: '📏',
+                models: [
+                    { code: 'FR-S01',   name: 'FR-S01',   connector: 'M12', pins: 8, ioLink: true },
+                    { code: 'FR-SA1C',  name: 'FR-SA1C',  connector: 'M8',  pins: 4, ioLink: true },
+                    { code: 'FR-LM20',  name: 'FR-LM20',  connector: 'M12', pins: 8, ioLink: true },
+                    { code: 'FR-LP20',  name: 'FR-LP20',  connector: 'M12', pins: 8, ioLink: true },
+                    { code: 'FR-LS20',  name: 'FR-LS20',  connector: 'M12', pins: 8, ioLink: true }
+                ]
+            },
+            'MP-F': {
+                name: 'MP-F',
+                fullName: 'Débitmètre MP-F',
+                icon: '⚡',
+                models: [
+                    { code: 'MP-FR10R', name: 'MP-FR10R', connector: 'M12', pins: 8, ioLink: true },
+                    { code: 'MP-FR20R', name: 'MP-FR20R', connector: 'M12', pins: 8, ioLink: true },
+                    { code: 'MP-FR10',  name: 'MP-FR10',  connector: 'M12', pins: 8, ioLink: true },
+                    { code: 'MP-FR20',  name: 'MP-FR20',  connector: 'M12', pins: 8, ioLink: true },
+                    { code: 'MP-FR80',  name: 'MP-FR80',  connector: 'M12', pins: 8, ioLink: true }
+                ]
+            },
+            'FD-X': {
+                name: 'FD-X',
+                fullName: 'Débitmètre à clipser',
+                icon: '🔧',
+                models: [
+                    { code: 'FD-XA1', name: 'FD-XA1', connector: 'M12', pins: 4, ioLink: true },
+                    { code: 'FD-XA5', name: 'FD-XA5', connector: 'M12', pins: 4, ioLink: true }
+                ]
+            },
+            'FI-T': {
+                name: 'FI-T',
+                fullName: 'Débitmètre insertion',
+                icon: '🎯',
+                models: [
+                    { code: 'FI-T8',   name: 'FI-T8',   connector: 'M8', pins: 4, ioLink: true },
+                    { code: 'FI-T15',  name: 'FI-T15',  connector: 'M8', pins: 4, ioLink: true },
+                    { code: 'FI-T25',  name: 'FI-T25',  connector: 'M8', pins: 4, ioLink: true },
+                    { code: 'FI-T50',  name: 'FI-T50',  connector: 'M8', pins: 4, ioLink: true },
+                    { code: 'FI-T100', name: 'FI-T100', connector: 'M8', pins: 4, ioLink: true },
+                    { code: 'FI-T200', name: 'FI-T200', connector: 'M8', pins: 4, ioLink: true }
+                ]
+            },
+            'FI-C': {
+                name: 'FI-C',
+                fullName: 'Débitmètre compact',
+                icon: '📦',
+                models: [
+                    { code: 'FI-1000', name: 'FI-1000', connector: 'M12', pins: 4, ioLink: true }
+                ]
+            },
+            'FD-E': {
+                name: 'FD-E',
+                fullName: 'Débitmètre FD-E',
+                icon: '🔬',
+                models: [
+                    { code: 'FD-ECA1',  name: 'FD-ECA1',  connector: 'M12', pins: 8, ioLink: true },
+                    { code: 'FD-ECA1C', name: 'FD-ECA1C', connector: 'M12', pins: 8, ioLink: true },
+                    { code: 'FD-EPA1',  name: 'FD-EPA1',  connector: 'M12', pins: 8, ioLink: true },
+                    { code: 'FD-EPA1C', name: 'FD-EPA1C', connector: 'M12', pins: 8, ioLink: true }
+                ]
+            },
+            'FD-Q': {
+                name: 'FD-Q',
+                fullName: 'Débitmètre à clipser',
+                icon: '🔗',
+                models: [
+                    { code: 'FD-Q10C', name: 'FD-Q10C', connector: 'M12', pins: 4, ioLink: true },
+                    { code: 'FD-Q20C', name: 'FD-Q20C', connector: 'M12', pins: 4, ioLink: true },
+                    { code: 'FD-Q32C', name: 'FD-Q32C', connector: 'M12', pins: 4, ioLink: true },
+                    { code: 'FD-Q50C', name: 'FD-Q50C', connector: 'M12', pins: 4, ioLink: true }
+                ]
+            },
+            'GP-MT': {
+                name: 'GP-MT',
+                fullName: 'Capteur de pression IO-Link',
+                icon: '🎚️',
+                models: [
+                    { code: 'GP-M001T', name: 'GP-M001T', connector: 'M12', pins: 4, ioLink: true },
+                    { code: 'GP-M010T', name: 'GP-M010T', connector: 'M12', pins: 4, ioLink: true },
+                    { code: 'GP-M025T', name: 'GP-M025T', connector: 'M12', pins: 4, ioLink: true },
+                    { code: 'GP-M100T', name: 'GP-M100T', connector: 'M12', pins: 4, ioLink: true },
+                    { code: 'GP-M250T', name: 'GP-M250T', connector: 'M12', pins: 4, ioLink: true },
+                    { code: 'GP-M400T', name: 'GP-M400T', connector: 'M12', pins: 4, ioLink: true }
+                ]
+            }
+        };
+
+        const nqDescriptions = {
+            'NQ-MP8L': 'Connecte 8 capteurs IO-Link à votre réseau industriel'
+        };
+
+        let selectedSensors  = [];
+        let selectedModel    = null;
+        let selectedCableLength = '2m';
+        let powerCableLength    = '10m';
+        let networkCableLength  = '2m';
+
+        // ── Helpers ──────────────────────────────────────────────────────────
+
+        function showToast(message, color = '#10b981') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.background = color;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        // ── Init ─────────────────────────────────────────────────────────────
+
+        function init() {
+            populateSensorSeries();
+            setupLengthButtons();
+        }
+
+        function populateSensorSeries() {
+            const select = document.getElementById('sensorSeries');
+            Object.keys(sensorDatabase).forEach(key => {
+                const s = sensorDatabase[key];
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = `${s.name} - ${s.fullName} (${s.models.length} modèles)`;
+                select.appendChild(option);
+            });
+        }
+
+        // Gestion unifiée de tous les boutons de longueur via data-group
+        function setupLengthButtons() {
+            document.addEventListener('click', e => {
+                const btn = e.target.closest('.length-btn');
+                if (!btn) return;
+                const group = btn.dataset.group;
+                document.querySelectorAll(`.length-btn[data-group="${group}"]`)
+                    .forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                if (group === 'sensor')  { selectedCableLength = btn.dataset.length; }
+                if (group === 'power')   { powerCableLength    = btn.dataset.length; updateSchema(); }
+                if (group === 'network') { networkCableLength  = btn.dataset.length; updateSchema(); }
+            });
+        }
+
+        // ── Sélection gamme / modèle ──────────────────────────────────────────
+
+        function updateSensorModels() {
+            const seriesKey = document.getElementById('sensorSeries').value;
+            const modelsGrid = document.getElementById('modelsGrid');
+            const cableLengthSelector = document.getElementById('cableLengthSelector');
+            const btnAdd = document.getElementById('btnAddSensor');
+
+            selectedModel = null;
+            btnAdd.disabled = true;
+            cableLengthSelector.style.display = 'none';
+
+            if (!seriesKey) {
+                modelsGrid.style.display = 'none';
+                return;
+            }
+
+            const series = sensorDatabase[seriesKey];
+            modelsGrid.style.display = 'grid';
+            modelsGrid.innerHTML = '';
+
+            series.models.forEach(model => {
+                const card = document.createElement('div');
+                card.className = 'model-card';
+                card.innerHTML = `<div class="model-icon">${series.icon}</div><div class="model-name">${model.name}</div>`;
+                card.onclick = () => selectModel(model, card, series.icon);
+                modelsGrid.appendChild(card);
+            });
+        }
+
+        function selectModel(model, card, icon) {
+            document.querySelectorAll('.model-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            selectedModel = { ...model, icon };
+
+            // FIX #1 : réinitialiser la longueur à 2m et marquer le bouton actif
+            selectedCableLength = '2m';
+            document.querySelectorAll('.length-btn[data-group="sensor"]').forEach(b => {
+                b.classList.toggle('active', b.dataset.length === '2m');
+            });
+
+            document.getElementById('cableLengthSelector').style.display = 'block';
+            document.getElementById('btnAddSensor').disabled = false;
+        }
+
+        // ── Ajout / suppression de capteurs ──────────────────────────────────
+
+        function addSensor() {
+            if (!selectedModel) return;
+
+            const seriesKey = document.getElementById('sensorSeries').value;
+            const series = sensorDatabase[seriesKey];
+
+            selectedSensors.push({
+                ...selectedModel,
+                seriesName: series.name,
+                cableLength: selectedCableLength,
+                id: Date.now()
+            });
+
+            // FIX #3 : feedback visuel non-bloquant
+            const btn = document.getElementById('btnAddSensor');
+            btn.classList.add('success');
+            btn.textContent = '✓ Ajouté !';
+            setTimeout(() => {
+                btn.classList.remove('success');
+                btn.textContent = '➕ Ajouter le capteur';
+            }, 1200);
+
+            updateSelectedSensorsList();
+            updateNQModules();
+            updateSchema();
+        }
+
+        function removeSensor(id) {
+            selectedSensors = selectedSensors.filter(s => s.id !== id);
+            updateSelectedSensorsList();
+            updateNQModules();
+            updateSchema();
+        }
+
+        function updateSelectedSensorsList() {
+            const container = document.getElementById('selectedSensorsList');
+            document.getElementById('sensorCount').textContent = selectedSensors.length;
+
+            if (selectedSensors.length === 0) {
+                container.innerHTML = `<div class="empty-state" style="padding:15px;"><p style="font-size:0.85em;">Aucun capteur sélectionné</p></div>`;
+                return;
+            }
+
+            container.innerHTML = selectedSensors.map(sensor => `
+                <div class="sensor-tag">
+                    <div class="sensor-tag-info">
+                        <div class="sensor-tag-name">
+                            ${sensor.icon} ${sensor.name}
+                            ${sensor.pins === 8 ? '<span class="badge badge-8pin">8-pin</span>' : ''}
+                        </div>
+                        <div class="sensor-tag-desc">${sensor.connector} • Câble ${sensor.cableLength}</div>
+                    </div>
+                    <button class="btn-remove" onclick="removeSensor(${sensor.id})">×</button>
+                </div>
+            `).join('');
+        }
+
+        // ── Modules NQ ───────────────────────────────────────────────────────
+
+        function updateNQModules() {
+            const container   = document.getElementById('nqModulesList');
+            const powerSel    = document.getElementById('powerCableSelector');
+            const networkSel  = document.getElementById('networkCableSelector');
+
+            const total   = selectedSensors.length;
+            const modules = Math.ceil(total / PORTS_PER_MODULE);
+
+            document.getElementById('nqCount').textContent = modules;
+
+            if (modules === 0) {
+                container.innerHTML = `<div class="empty-state" style="padding:15px;"><p style="font-size:0.85em;">Ajoutez des capteurs</p></div>`;
+                powerSel.style.display   = 'none';
+                networkSel.style.display = 'none';
+                return;
+            }
+
+            powerSel.style.display   = 'block';
+            networkSel.style.display = 'block';
+
+            let html = '';
+
+            if (modules > 1) {
+                html += `
+                    <div class="alert alert-info">
+                        <span style="font-size:1.2em;">ℹ️</span>
+                        <div><strong>Info :</strong> ${modules} modules NQ nécessaires (${total} capteurs)</div>
+                    </div>`;
+            }
+
+            for (let i = 0; i < modules; i++) {
+                const used = Math.min(PORTS_PER_MODULE, total - i * PORTS_PER_MODULE);
+                const free = PORTS_PER_MODULE - used;
+                html += `
+                    <div class="sensor-tag" style="border-left-color:#dc2626;">
+                        <div class="sensor-tag-info">
+                            <div class="sensor-tag-name">
+                                ⚡ NQ-MP8L #${i + 1}
+                                ${i > 0 ? '<span class="badge" style="background:#8b5cf6;">CASCADE</span>' : ''}
+                            </div>
+                            <div class="sensor-tag-desc">${used}/${PORTS_PER_MODULE} ports • ${free} libre(s)</div>
+                        </div>
+                    </div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        // ── Schéma ────────────────────────────────────────────────────────────
+
+        function updateSchema() {
+            const container = document.getElementById('schemaContent');
+
+            if (selectedSensors.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔌</div>
+                        <h3>Ajoutez des capteurs pour voir le schéma</h3>
+                        <p>Sélectionnez une gamme, puis un modèle de capteur</p>
+                    </div>`;
+                return;
+            }
+
+            const modules = Math.ceil(selectedSensors.length / PORTS_PER_MODULE);
+            let html = '';
+
+            for (let mi = 0; mi < modules; mi++) {
+                const sensors = selectedSensors.slice(mi * PORTS_PER_MODULE, (mi + 1) * PORTS_PER_MODULE);
+
+                html += `
+                    <div class="module-group ${mi > 0 ? 'cascade' : ''}">
+                        ${mi > 0 ? '<div class="cascade-indicator">🔗 MODULE EN CASCADE</div>' : ''}
+
+                        <!-- Capteurs -->
+                        <div class="schema-column">
+                            <div class="schema-column-title">📡 Capteurs</div>
+                            ${sensors.map(s => `
+                                <div class="schema-sensor">
+                                    <div class="sensor-image">${s.icon}</div>
+                                    <div class="sensor-info">
+                                        <div class="schema-sensor-name">${s.name}</div>
+                                        <div class="schema-sensor-connector">${s.connector} ${s.pins}-pin</div>
+                                    </div>
+                                </div>`).join('')}
+                        </div>
+
+                        <!-- Câbles -->
+                        <div class="schema-column schema-cables">
+                            <div class="schema-column-title">🔌 Câbles</div>
+
+                            ${sensors.map(s => {
+                                const c = getCableInfo(s);
+                                return `
+                                    <div class="cable-connection">
+                                        <div class="cable-line sensor-cable"></div>
+                                        <div class="cable-info-box sensor-cable">
+                                            <div class="cable-model">${c.model}</div>
+                                            <div class="cable-specs">${c.type} • ${s.cableLength}</div>
+                                        </div>
+                                        <div class="cable-line sensor-cable"></div>
+                                    </div>`;
+                            }).join('')}
+
+                            <!-- Alimentation -->
+                            <div class="cable-connection" style="margin-top:15px;">
+                                <div class="cable-line power-cable"></div>
+                                <div class="cable-info-box power-cable">
+                                    <div class="cable-model">${getPowerCable()}</div>
+                                    <div class="cable-specs">Alimentation • ${powerCableLength}</div>
+                                </div>
+                                <div class="cable-line power-cable"></div>
+                            </div>
+
+                            <!-- FIX #4 : Ethernet uniquement sur le module maître -->
+                            ${mi === 0 ? `
+                                <div class="cable-connection">
+                                    <div class="cable-line network-cable"></div>
+                                    <div class="cable-info-box network-cable">
+                                        <div class="cable-model">${getNetworkCable()}</div>
+                                        <div class="cable-specs">Ethernet • ${networkCableLength}</div>
+                                    </div>
+                                    <div class="cable-line network-cable"></div>
+                                </div>` : ''}
+
+                            ${mi > 0 ? `
+                                <div class="cable-connection">
+                                    <div class="cable-line cascade-cable"></div>
+                                    <div class="cable-info-box cascade-cable">
+                                        <div class="cable-model">OP-88089</div>
+                                        <div class="cable-specs">Cascade • 2m</div>
+                                    </div>
+                                    <div class="cable-line cascade-cable"></div>
+                                </div>` : ''}
+                        </div>
+
+                        <!-- Module NQ -->
+                        <div class="schema-column">
+                            <div class="schema-column-title">⚡ Module NQ</div>
+                            <div class="nq-module-container">
+                                <div class="schema-nq">
+                                    <div class="nq-image">🔲</div>
+                                    <div class="schema-nq-name">NQ-MP8L${mi > 0 ? ` #${mi + 1}` : ''}</div>
+                                    <div class="schema-nq-desc">${nqDescriptions['NQ-MP8L']}</div>
+                                    <div class="schema-nq-ports">${sensors.length}/${PORTS_PER_MODULE} ports utilisés</div>
+                                </div>
+                                ${mi === 0 ? `
+                                    <div style="text-align:center; margin-top:10px;">
+                                        <div style="font-size:2em;">💻</div>
+                                        <div style="font-size:0.8em; color:#9ca3af;">PC / PLC</div>
+                                    </div>` : ''}
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        // ── Câbles ────────────────────────────────────────────────────────────
+
+        function getCableInfo(sensor) {
+            const len = sensor.cableLength;
+
+            if (sensor.connector === 'M12' && sensor.pins === 4) {
+                return {
+                    model: len === '2m' ? 'OP-85503' : len === '5m' ? 'OP-85504' : 'OP-85502',
+                    type: 'M12 femelle → M12 mâle'
+                };
+            }
+            if (sensor.connector === 'M12' && sensor.pins === 8) {
+                return {
+                    model: len === '2m' ? 'OP-87564' : len === '5m' ? 'OP-87565' : 'OP-87566',
+                    type: 'M12 8-pin femelle → M12 mâle'
+                };
+            }
+            if (sensor.connector === 'M8' && sensor.pins === 4) {
+                // FIX #0 : code correct pour M8 10m (était OP-88456 en doublon)
+                return {
+                    model: len === '2m' ? 'OP-88456' : len === '5m' ? 'OP-88457' : 'OP-88458',
+                    type: 'M8 femelle → M12 mâle'
+                };
+            }
+            return { model: 'OP-88071', type: 'M8 femelle → M12 mâle' };
+        }
+
+        function getPowerCable() {
+            return powerCableLength === '2m' ? 'NQ-P8B2' : powerCableLength === '5m' ? 'NQ-P8B5' : 'NQ-P8B10';
+        }
+
+        function getNetworkCable() {
+            return networkCableLength === '2m' ? 'OP-88086' : networkCableLength === '5m' ? 'OP-88087' : 'OP-88088';
+        }
+
+        // ── Export ────────────────────────────────────────────────────────────
+
+        function exportShoppingList() {
+            if (selectedSensors.length === 0) {
+                showToast('⚠️ Aucun capteur sélectionné', '#dc2626');
+                return;
+            }
+
+            const modules = Math.ceil(selectedSensors.length / PORTS_PER_MODULE);
+            let list = '═══════════════════════════════════════\n';
+            list += '  LISTE DE COURSES - KEYENCE\n';
+            list += '═══════════════════════════════════════\n\n';
+
+            list += '📡 CAPTEURS:\n';
+            const sensorCounts = {};
+            selectedSensors.forEach(s => {
+                const key = `${s.name} (${s.connector} ${s.pins}-pin)`;
+                sensorCounts[key] = (sensorCounts[key] || 0) + 1;
+            });
+            Object.entries(sensorCounts).forEach(([name, count]) => {
+                list += `  • ${count}x ${name}\n`;
+            });
+
+            list += '\n🔌 CÂBLES CAPTEURS:\n';
+            const cableCounts = {};
+            selectedSensors.forEach(s => {
+                const c = getCableInfo(s);
+                const key = `${c.model} (${c.type}, ${s.cableLength})`;
+                cableCounts[key] = (cableCounts[key] || 0) + 1;
+            });
+            Object.entries(cableCounts).forEach(([name, count]) => {
+                list += `  • ${count}x ${name}\n`;
+            });
+
+            list += '\n⚡ MODULES NQ:\n';
+            list += `  • ${modules}x NQ-MP8L (Module maître IO-Link)\n`;
+
+            list += '\n🔋 CÂBLES ALIMENTATION:\n';
+            list += `  • ${modules}x ${getPowerCable()} (M12 → Fils nus, ${powerCableLength})\n`;
+
+            list += '\n🌐 CÂBLES RÉSEAU:\n';
+            list += `  • 1x ${getNetworkCable()} (M12 → RJ45, ${networkCableLength})\n`;
+
+            if (modules > 1) {
+                list += '\n🔗 CÂBLES CASCADE:\n';
+                list += `  • ${modules - 1}x OP-88089 (M12 → M12, 2m)\n`;
+            }
+
+            list += '\n═══════════════════════════════════════\n';
+            list += `Total capteurs: ${selectedSensors.length}\n`;
+            list += `Total modules NQ: ${modules}\n`;
+            list += '═══════════════════════════════════════\n';
+
+            const blob = new Blob([list], { type: 'text/plain' });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href     = url;
+            a.download = `KEYENCE_Liste_Courses_${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            // FIX #4 : toast non-bloquant au lieu de alert()
+            showToast('✅ Liste de courses exportée !');
+        }
+
+        init();
+    </script>
+</body>
+</html>
