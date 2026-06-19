@@ -246,6 +246,13 @@
             <!-- Col 3 : Modules NQ -->
             <div class="selection-column">
                 <div class="selection-title">2️⃣ Modules NQ Requis (<span id="nqCount">0</span>)</div>
+                <div style="margin-bottom:8px;">
+                    <label style="font-size:0.82em;color:#9ca3af;margin-bottom:5px;display:block;">Modèle de module NQ :</label>
+                    <div style="display:flex;gap:6px;">
+                        <button class="length-btn active" data-group="nqmodel" data-nq="NQ-MP8L" style="flex:1;font-size:0.78em;">NQ-MP8L<br><span style="font-weight:400;opacity:0.8;">8 ports · M12</span></button>
+                        <button class="length-btn" data-group="nqmodel" data-nq="NQ-EP4L" style="flex:1;font-size:0.78em;">NQ-EP4L<br><span style="font-weight:400;opacity:0.8;">4 ports · M8</span></button>
+                    </div>
+                </div>
                 <div id="nqModulesList" class="selected-sensors-list">
                     <div class="empty-state" style="padding:15px;">
                         <p style="font-size:0.85em;">Ajoutez des capteurs</p>
@@ -286,7 +293,12 @@
 </div>
 
 <script>
-const PORTS_PER_MODULE = 8;
+const NQ_MODELS = {
+    'NQ-MP8L': { ports: 8 },
+    'NQ-EP4L': { ports: 4 }
+};
+let selectedNQModel = 'NQ-MP8L';
+function getPortsPerModule() { return NQ_MODELS[selectedNQModel].ports; }
 
 /* ── Images ────────────────────────────────────────────────────────── */
 const imageData = {
@@ -440,8 +452,8 @@ function laptopSVG(x, y, w, h) {
 /* Géométrie d'un module (y top + midY) */
 function modGeom(mi) {
     const N = selectedSensors.length;
-    const s0 = mi * PORTS_PER_MODULE;
-    const sN = Math.min(s0 + PORTS_PER_MODULE, N);
+    const s0 = mi * getPortsPerModule();
+    const sN = Math.min(s0 + getPortsPerModule(), N);
     const fy = SC.TOP_PAD + s0 * SC.SLOT_H + SC.IMG_H / 2;
     const ly = SC.TOP_PAD + (sN - 1) * SC.SLOT_H + SC.IMG_H / 2;
     const midY = Math.round((fy + ly) / 2);
@@ -460,6 +472,7 @@ function init() {
         if (g === 'sensor')  selectedCableLength = btn.dataset.length;
         if (g === 'power')  { powerCableLength   = btn.dataset.length; updateSchema(); }
         if (g === 'network'){ networkCableLength  = btn.dataset.length; updateSchema(); }
+        if (g === 'nqmodel'){ selectedNQModel = btn.dataset.nq; updateNQModules(); updateSchema(); }
     });
     const ro = new ResizeObserver(() => { if (selectedSensors.length) updateSchema(); });
     ro.observe(document.getElementById('schemaContent'));
@@ -553,7 +566,7 @@ function updateNQModules() {
     const ps = document.getElementById('powerCableSelector');
     const ns = document.getElementById('networkCableSelector');
     const total = selectedSensors.length;
-    const M = Math.ceil(total / PORTS_PER_MODULE);
+    const M = Math.ceil(total / getPortsPerModule());
     document.getElementById('nqCount').textContent = M;
 
     if (!M) {
@@ -566,11 +579,11 @@ function updateNQModules() {
     let html = '';
     if (M > 1) html += `<div class="alert alert-info"><span>ℹ️</span><div><strong>Info :</strong> ${M} modules NQ nécessaires (${total} capteurs)</div></div>`;
     for (let i = 0; i < M; i++) {
-        const used = Math.min(PORTS_PER_MODULE, total - i * PORTS_PER_MODULE);
+        const used = Math.min(getPortsPerModule(), total - i * getPortsPerModule());
         html += `<div class="sensor-tag" style="border-left-color:#dc2626;">
             <div class="sensor-tag-info">
-                <div class="sensor-tag-name">⚡ NQ-MP8L #${i+1}${i>0?'<span class="badge" style="background:#8b5cf6;">CASCADE</span>':''}</div>
-                <div class="sensor-tag-desc">${used}/${PORTS_PER_MODULE} ports • ${PORTS_PER_MODULE-used} libre(s)</div>
+                <div class="sensor-tag-name">⚡ ${selectedNQModel} #${i+1}${i>0?'<span class="badge" style="background:#8b5cf6;">CASCADE</span>':''}</div>
+                <div class="sensor-tag-desc">${used}/${getPortsPerModule()} ports • ${getPortsPerModule()-used} libre(s)</div>
             </div></div>`;
     }
     c.innerHTML = html;
@@ -623,15 +636,15 @@ function updateSchema() {
     const PC_CY  = SVG_H - Math.round(BOT_PAD / 2);
 
     function _modGeom(mi) {
-        const s0  = mi * PORTS_PER_MODULE;
-        const sN  = Math.min(s0 + PORTS_PER_MODULE, N);
+        const s0  = mi * getPortsPerModule();
+        const sN  = Math.min(s0 + getPortsPerModule(), N);
         const fy  = TOP_PAD + s0 * SLOT_H + IMG_H / 2;
         const ly  = TOP_PAD + (sN - 1) * SLOT_H + IMG_H / 2;
         const midY = Math.round((fy + ly) / 2);
         return { top: midY - Math.round(MOD_H / 2), midY };
     }
 
-    const M = Math.ceil(N / PORTS_PER_MODULE);
+    const M = Math.ceil(N / getPortsPerModule());
     const p = [];
 
     /* ── Capteurs ── */
@@ -655,8 +668,8 @@ function updateSchema() {
 
     /* ── Modules NQ ── */
     for (let mi = 0; mi < M; mi++) {
-        const s0  = mi * PORTS_PER_MODULE;
-        const sN  = Math.min(s0 + PORTS_PER_MODULE, N);
+        const s0  = mi * getPortsPerModule();
+        const sN  = Math.min(s0 + getPortsPerModule(), N);
         const fy  = TOP_PAD + s0 * SLOT_H + IMG_H / 2;
         const ly  = TOP_PAD + (sN-1) * SLOT_H + IMG_H / 2;
         const { top: mTop, midY: mMid } = _modGeom(mi);
@@ -668,12 +681,12 @@ function updateSchema() {
         p.push(`<line x1="${BUS_X}" y1="${mMid}" x2="${MOD_X}" y2="${mMid}" stroke="#ccc" stroke-width="1.5"/>`);
 
         /* Image module */
-        const nqSrc = imageData['NQ-MP8L'] || '';
+        const nqSrc = imageData[selectedNQModel] || imageData['NQ-MP8L'] || '';
         if (nqSrc) p.push(`<image href="${nqSrc}" x="${MOD_X}" y="${mTop}" width="${MOD_W}" height="${MOD_H}" preserveAspectRatio="xMidYMid meet"/>`);
 
         /* Labels module */
-        p.push(`<text x="${MOD_X + MOD_W/2}" y="${mTop + MOD_H + 13}" text-anchor="middle" font-size="9" font-weight="600" fill="#333" font-family="Segoe UI,Arial,sans-serif">NQ-MP8L${M>1?' #'+(mi+1):''}</text>`);
-        p.push(`<text x="${MOD_X + MOD_W/2}" y="${mTop + MOD_H + 24}" text-anchor="middle" font-size="7.5" fill="#999" font-family="Segoe UI,Arial,sans-serif">${sN-s0}/${PORTS_PER_MODULE} ports</text>`);
+        p.push(`<text x="${MOD_X + MOD_W/2}" y="${mTop + MOD_H + 13}" text-anchor="middle" font-size="9" font-weight="600" fill="#333" font-family="Segoe UI,Arial,sans-serif">${selectedNQModel}${M>1?' #'+(mi+1):''}</text>`);
+        p.push(`<text x="${MOD_X + MOD_W/2}" y="${mTop + MOD_H + 24}" text-anchor="middle" font-size="7.5" fill="#999" font-family="Segoe UI,Arial,sans-serif">${sN-s0}/${getPortsPerModule()} ports</text>`);
     }
 
     /* ── Alimentation (bleu) → Module 1 ── */
@@ -708,7 +721,7 @@ function updateSchema() {
 
         p.push(`<line x1="${CAS_BX}" y1="${y1}" x2="${CAS_BX}" y2="${y2}" stroke="#3b82f6" stroke-width="2.5"/>`);
         p.push(`<line x1="${CAS_GX}" y1="${y1}" x2="${CAS_GX}" y2="${y2}" stroke="#10b981" stroke-width="2.5"/>`);
-        p.push(svgLabel(CAS_BX + 38, cy2, 'OP-88089 • 2m', '#8b5cf6'));
+        p.push(svgLabel(CAS_BX + 38, cy2, `${getCascadeCable()} • 2m`, '#8b5cf6'));
     }
 
     container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${SVG_W}" height="${SVG_H}" style="display:block;">
@@ -730,17 +743,27 @@ function getCableInfo(sensor) {
 }
 
 function getPowerCable() {
-    return powerCableLength==='2m'?'NQ-P8B2':powerCableLength==='5m'?'NQ-P8B5':'NQ-P8B10';
+    const l = powerCableLength;
+    if (selectedNQModel === 'NQ-EP4L')
+        return l==='2m'?'NQ-P4B2':l==='5m'?'NQ-P4B5':'NQ-P4B10';
+    return l==='2m'?'NQ-P8B2':l==='5m'?'NQ-P8B5':'NQ-P8B10';
 }
 
 function getNetworkCable() {
-    return networkCableLength==='2m'?'OP-88086':networkCableLength==='5m'?'OP-88087':'OP-88088';
+    const l = networkCableLength;
+    if (selectedNQModel === 'NQ-EP4L')
+        return l==='2m'?'OP-88448':l==='5m'?'OP-88449':'OP-88450';
+    return l==='2m'?'OP-88086':l==='5m'?'OP-88087':'OP-88088';
+}
+
+function getCascadeCable() {
+    return selectedNQModel === 'NQ-EP4L' ? 'OP-88453' : 'OP-88089';
 }
 
 /* ── Export ────────────────────────────────────────────────────────── */
 function exportShoppingList() {
     if (!selectedSensors.length) { showToast('⚠️ Aucun capteur sélectionné','#dc2626'); return; }
-    const M = Math.ceil(selectedSensors.length / PORTS_PER_MODULE);
+    const M = Math.ceil(selectedSensors.length / getPortsPerModule());
     let list = '═══════════════════════════════════════\n  LISTE DE COURSES - KEYENCE\n═══════════════════════════════════════\n\n';
 
     list += '📡 CAPTEURS:\n';
@@ -753,10 +776,10 @@ function exportShoppingList() {
     selectedSensors.forEach(s => { const ci=getCableInfo(s); const k=`${ci.model} (${ci.type}, ${s.cableLength})`; cc[k]=(cc[k]||0)+1; });
     Object.entries(cc).forEach(([n,c]) => { list += `  • ${c}x ${n}\n`; });
 
-    list += `\n⚡ MODULES NQ:\n  • ${M}x NQ-MP8L\n`;
+    list += `\n⚡ MODULES NQ:\n  • ${M}x ${selectedNQModel}\n`;
     list += `\n🔋 CÂBLES ALIMENTATION:\n  • ${M}x ${getPowerCable()} (${powerCableLength})\n`;
     list += `\n🌐 CÂBLES RÉSEAU:\n  • 1x ${getNetworkCable()} (${networkCableLength})\n`;
-    if (M > 1) list += `\n🔗 CÂBLES CASCADE:\n  • ${M-1}x OP-88089 (2m)\n`;
+    if (M > 1) list += `\n🔗 CÂBLES CASCADE:\n  • ${M-1}x ${getCascadeCable()} (2m)\n`;
     list += `\n═══════════════════════════════════════\nTotal capteurs: ${selectedSensors.length} | Modules NQ: ${M}\n═══════════════════════════════════════\n`;
 
     const a = Object.assign(document.createElement('a'), {
