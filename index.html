@@ -220,11 +220,22 @@
                 </select>
                 <div id="modelsGrid" class="models-grid" style="display:none;"></div>
                 <div id="cableLengthSelector" style="display:none;">
-                    <label style="font-size:0.85em;color:#9ca3af;margin-bottom:5px;display:block;">Longueur du câble capteur :</label>
+                    <label style="font-size:0.82em;color:#9ca3af;margin-bottom:4px;display:block;">Longueur :</label>
                     <div class="cable-length-selector">
                         <button class="length-btn active" data-group="sensor" data-length="2m">2m</button>
                         <button class="length-btn" data-group="sensor" data-length="5m">5m</button>
                         <button class="length-btn" data-group="sensor" data-length="10m">10m</button>
+                        <button class="length-btn" data-group="sensor" data-length="20m">20m</button>
+                    </div>
+                    <label style="font-size:0.82em;color:#9ca3af;margin:6px 0 4px;display:block;">Matériau :</label>
+                    <div class="cable-length-selector">
+                        <button class="length-btn active" data-group="material" data-mat="pvc">PVC</button>
+                        <button class="length-btn" data-group="material" data-mat="pur">PUR</button>
+                    </div>
+                    <label style="font-size:0.82em;color:#9ca3af;margin:6px 0 4px;display:block;">Coupe :</label>
+                    <div class="cable-length-selector">
+                        <button class="length-btn active" data-group="shape" data-shape="straight">Droit</button>
+                        <button class="length-btn" data-group="shape" data-shape="l">En L</button>
                     </div>
                 </div>
                 <button class="btn-add" id="btnAddSensor" onclick="addSensor()" disabled>
@@ -387,9 +398,11 @@ const sensorDatabase = {
 };
 
 /* ── État ──────────────────────────────────────────────────────────── */
-let selectedSensors    = [];
-let selectedModel      = null;
-let selectedCableLength = '2m';
+let selectedSensors     = [];
+let selectedModel       = null;
+let selectedCableLength  = '2m';
+let selectedCableMaterial = 'pvc';   // 'pvc' | 'pur'
+let selectedCableShape    = 'straight'; // 'straight' | 'l'
 let powerCableLength    = '10m';
 let networkCableLength  = '2m';
 
@@ -469,7 +482,9 @@ function init() {
         const g = btn.dataset.group;
         document.querySelectorAll(`.length-btn[data-group="${g}"]`).forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        if (g === 'sensor')  selectedCableLength = btn.dataset.length;
+        if (g === 'sensor')   selectedCableLength   = btn.dataset.length;
+        if (g === 'material') selectedCableMaterial = btn.dataset.mat;
+        if (g === 'shape')    selectedCableShape    = btn.dataset.shape;
         if (g === 'power')  { powerCableLength   = btn.dataset.length; updateSchema(); }
         if (g === 'network'){ networkCableLength  = btn.dataset.length; updateSchema(); }
         if (g === 'nqmodel'){ selectedNQModel = btn.dataset.nq; updateNQModules(); updateSchema(); }
@@ -516,10 +531,12 @@ function selectModel(model, card) {
     document.querySelectorAll('.model-card').forEach(c => c.classList.remove('selected'));
     card.classList.add('selected');
     selectedModel = { ...model };
-    selectedCableLength = '2m';
-    document.querySelectorAll('.length-btn[data-group="sensor"]').forEach(b => {
-        b.classList.toggle('active', b.dataset.length === '2m');
-    });
+    selectedCableLength   = '2m';
+    selectedCableMaterial = 'pvc';
+    selectedCableShape    = 'straight';
+    document.querySelectorAll('.length-btn[data-group="sensor"]').forEach(b   => b.classList.toggle('active', b.dataset.length === '2m'));
+    document.querySelectorAll('.length-btn[data-group="material"]').forEach(b => b.classList.toggle('active', b.dataset.mat    === 'pvc'));
+    document.querySelectorAll('.length-btn[data-group="shape"]').forEach(b    => b.classList.toggle('active', b.dataset.shape  === 'straight'));
     document.getElementById('cableLengthSelector').style.display = 'block';
     document.getElementById('btnAddSensor').disabled = false;
 }
@@ -528,7 +545,7 @@ function selectModel(model, card) {
 function addSensor() {
     if (!selectedModel) return;
     const key = document.getElementById('sensorSeries').value;
-    selectedSensors.push({ ...selectedModel, seriesName: key, cableLength: selectedCableLength, id: Date.now() });
+    selectedSensors.push({ ...selectedModel, seriesName: key, cableLength: selectedCableLength, cableMaterial: selectedCableMaterial, cableShape: selectedCableShape, id: Date.now() });
 
     const btn = document.getElementById('btnAddSensor');
     btn.classList.add('success'); btn.textContent = '✓ Ajouté !';
@@ -555,7 +572,7 @@ function updateSelectedSensorsList() {
         <div class="sensor-tag">
             <div class="sensor-tag-info">
                 <div class="sensor-tag-name">${esc(s.name)}${s.pins===8?'<span class="badge badge-8pin">8-pin</span>':''}</div>
-                <div class="sensor-tag-desc">${s.connector} • Câble ${s.cableLength}</div>
+                <div class="sensor-tag-desc">${s.connector} • ${s.cableLength} ${(s.cableMaterial||'pvc').toUpperCase()} ${s.cableShape==='l'?'En L':'Droit'}</div>
             </div>
             <button class="btn-remove" onclick="removeSensor(${s.id})">×</button>
         </div>`).join('');
@@ -661,9 +678,10 @@ function updateSchema() {
         p.push(`<line x1="${IMG_X + IMG_W + 2}" y1="${cy}" x2="${BUS_X}" y2="${cy}" stroke="#ccc" stroke-width="1.5"/>`);
 
         /* Label câble sur la ligne */
-        const ci = getCableInfo(s);
-        const lx = Math.round((IMG_X + IMG_W + 2 + BUS_X) / 2);
-        p.push(svgLabel(lx, cy - 8, `${ci.model} • ${s.cableLength}`, '#aaa'));
+        const ci  = getCableInfo(s);
+        const lx  = Math.round((IMG_X + IMG_W + 2 + BUS_X) / 2);
+        const lbl = ci.qty > 1 ? `${ci.qty}× ${ci.model} • ${s.cableLength}` : `${ci.model} • ${s.cableLength}`;
+        p.push(svgLabel(lx, cy - 8, lbl, '#aaa'));
     }
 
     /* ── Modules NQ ── */
@@ -730,16 +748,58 @@ function updateSchema() {
     </svg>`;
 }
 
-/* ── Câbles ────────────────────────────────────────────────────────── */
+/* ── Câbles capteurs ───────────────────────────────────────────────── */
 function getCableInfo(sensor) {
-    const len = sensor.cableLength;
-    if (sensor.connector === 'M12' && sensor.pins === 4)
-        return { model: len==='2m'?'OP-85503':len==='5m'?'OP-85504':'OP-85502', type:'M12 4p femelle → M12 mâle' };
-    if (sensor.connector === 'M12' && sensor.pins === 8)
-        return { model: len==='2m'?'OP-87564':len==='5m'?'OP-87565':'OP-87566', type:'M12 8p femelle → M12 mâle' };
-    if (sensor.connector === 'M8'  && sensor.pins === 4)
-        return { model: len==='2m'?'OP-88456':len==='5m'?'OP-88457':'OP-88458', type:'M8 femelle → M12 mâle' };
-    return { model:'OP-88071', type:'M8 femelle → M12 mâle' };
+    const len   = sensor.cableLength;
+    const mat   = sensor.cableMaterial || 'pvc';
+    const shape = sensor.cableShape    || 'straight';
+    const sName = sensor.seriesName;
+    const isPUR = mat === 'pur';
+    const isL   = shape === 'l';
+
+    // Qty pour les rallonges (10m = 2×5m, 20m = 4×5m ; base = 5m)
+    const qty5  = { '2m':1, '5m':1, '10m':2, '20m':4 };
+    // Qty pour les câbles disponibles en 10m (10m = 1×10m, 20m = 2×10m)
+    const qty10 = { '2m':1, '5m':1, '10m':1, '20m':2 };
+    // Longueur unitaire pour les séries ne dépassant pas 5m par câble
+    const unit5 = (len === '10m' || len === '20m') ? '5m' : len;
+
+    // ── FD-H, FI-C (FI-1000) → FD-HCC (connecteur M12 8 broches capteur) ──
+    if (sName === 'FD-H' || sName === 'FI-C') {
+        const model = (len === '10m' || len === '20m') ? 'FD-HCC10' : 'FD-HCC2';
+        return { model, qty: qty10[len] || 1, type: 'M12 8p femelle → M12 4p mâle' };
+    }
+
+    // ── MP-F → OP-88761 (5m, à chaîner pour 10m/20m) ──
+    if (sName === 'MP-F') {
+        return { model: 'OP-88761', qty: qty5[len] || 1, type: 'M12 8p femelle → M12 4p mâle' };
+    }
+
+    // ── Autres M12 8p (FD-E, FR…) → OP-88444/445/446 ──
+    if (sensor.connector === 'M12' && sensor.pins === 8) {
+        const model = len === '2m' ? 'OP-88444' : len === '5m' ? 'OP-88445' : 'OP-88446';
+        return { model, qty: qty10[len] || 1, type: 'M12 8p femelle → M12 4p mâle' };
+    }
+
+    // ── M12 4p ──
+    if (sensor.connector === 'M12' && sensor.pins === 4) {
+        let model;
+        if (isPUR && isL)  model = 'OP-88455';                                   // PUR en L (2m uniquement)
+        else if (isPUR)    model = unit5 === '2m' ? 'OP-88075' : 'OP-88076';     // PUR droit
+        else               model = unit5 === '2m' ? 'OP-85503' : 'OP-85504';     // PVC droit
+        return { model, qty: qty5[len] || 1, type: 'M12 4p femelle → M12 mâle' };
+    }
+
+    // ── M8 4p ──
+    if (sensor.connector === 'M8' && sensor.pins === 4) {
+        let model;
+        if (isPUR && isL)  model = unit5 === '2m' ? 'OP-88073' : 'OP-88074';    // PUR en L
+        else if (isPUR)    model = unit5 === '2m' ? 'OP-88071' : 'OP-88072';    // PUR droit
+        else               model = unit5 === '2m' ? 'OP-88456' : 'OP-88457';    // PVC droit
+        return { model, qty: qty5[len] || 1, type: 'M8 femelle → M12 mâle' };
+    }
+
+    return { model: 'OP-88071', qty: 1, type: 'M8 femelle → M12 mâle' };
 }
 
 function getPowerCable() {
@@ -773,7 +833,13 @@ function exportShoppingList() {
 
     list += '\n🔌 CÂBLES CAPTEURS:\n';
     const cc = {};
-    selectedSensors.forEach(s => { const ci=getCableInfo(s); const k=`${ci.model} (${ci.type}, ${s.cableLength})`; cc[k]=(cc[k]||0)+1; });
+    selectedSensors.forEach(s => {
+        const ci = getCableInfo(s);
+        const mat = (s.cableMaterial||'pvc').toUpperCase();
+        const shp = s.cableShape === 'l' ? ' En L' : ' Droit';
+        const k = `${ci.model} (${ci.type}, ${s.cableLength} ${mat}${shp})`;
+        cc[k] = (cc[k]||0) + ci.qty;
+    });
     Object.entries(cc).forEach(([n,c]) => { list += `  • ${c}x ${n}\n`; });
 
     list += `\n⚡ MODULES NQ:\n  • ${M}x ${selectedNQModel}\n`;
