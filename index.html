@@ -604,8 +604,7 @@ function updateNQModules() {
         ps.style.display = ns.style.display = 'none';
         return;
     }
-    ps.style.display = 'block';
-    ns.style.display = cascadeMode ? 'block' : 'none';
+    ps.style.display = ns.style.display = 'block';
 
     let html = '';
     if (M > 1 && cascadeMode)  html += `<div class="alert alert-info"><span>ℹ️</span><div><strong>Info :</strong> ${M} modules NQ en cascade (${total} capteurs)</div></div>`;
@@ -761,20 +760,27 @@ function updateSchema() {
             p.push(svgLabel(CAS_BX + 38, cy2, `${getCascadeCable()} • 2m`, '#8b5cf6'));
         }
     } else {
-        /* ── AUTONOME : chaque module a son propre câble alimentation ── */
+        /* ── AUTONOME : chaque module a son propre câble alim + réseau ── */
         for (let mi = 0; mi < M; mi++) {
-            const mG   = _modGeom(mi);
-            const powY = mG.top + Math.round(MOD_H * 0.28);
-            const offX = TURN_X + mi * 10;
-            p.push(`<polyline points="${MOD_RIGHT},${powY} ${offX},${powY} ${offX},${POW_CY} ${POWER_CX - POWER_R},${POW_CY}" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`);
-            if (mi === 0) {
-                const lbl = M > 1 ? `${M}× ${getPowerCable()} • ${powerCableLength}` : `${getPowerCable()} • ${powerCableLength}`;
-                p.push(svgLabel(Math.round((MOD_RIGHT + offX) / 2), powY - 10, lbl, '#3b82f6'));
-            }
+            const mG    = _modGeom(mi);
+            const powY  = mG.top + Math.round(MOD_H * 0.28);
+            const netY  = mG.top + Math.round(MOD_H * 0.72);
+            const offXP = TURN_X      + mi * 10;
+            const offXN = TURN_X + 18 + mi * 10;
+
+            /* Câble alimentation (bleu) — référence sur chaque ligne */
+            p.push(`<polyline points="${MOD_RIGHT},${powY} ${offXP},${powY} ${offXP},${POW_CY} ${POWER_CX - POWER_R},${POW_CY}" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`);
+            p.push(svgLabel(Math.round((MOD_RIGHT + offXP) / 2), powY - 10, `${getPowerCable()} • ${powerCableLength}`, '#3b82f6'));
+
+            /* Câble réseau (vert) — référence sur chaque ligne */
+            p.push(`<polyline points="${MOD_RIGHT},${netY} ${offXN},${netY} ${offXN},${PC_CY} ${PC_CX - PC_W/2},${PC_CY}" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`);
+            p.push(svgLabel(Math.round((MOD_RIGHT + offXN) / 2), netY + 12, `${getNetworkCable()} • ${networkCableLength}`, '#10b981'));
         }
         /* Icône alimentation */
         p.push(`<circle cx="${POWER_CX}" cy="${POW_CY}" r="${POWER_R}" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/>`);
         p.push(`<text x="${POWER_CX}" y="${POW_CY + 9}" text-anchor="middle" dominant-baseline="middle" font-size="24">⚡</text>`);
+        /* Icône PC */
+        p.push(laptopSVG(PC_CX - PC_W / 2, PC_CY - PC_H / 2, PC_W, PC_H));
     }
 
     container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${SVG_W}" height="${SVG_H}" style="display:block;">
@@ -882,6 +888,8 @@ function exportShoppingList() {
     if (cascadeMode) {
         list += `\n🌐 CÂBLES RÉSEAU:\n  • 1x ${getNetworkCable()} (${networkCableLength})\n`;
         if (M > 1) list += `\n🔗 CÂBLES CASCADE:\n  • ${M-1}x ${getCascadeCable()} (2m)\n`;
+    } else {
+        list += `\n🌐 CÂBLES RÉSEAU:\n  • ${M}x ${getNetworkCable()} (${networkCableLength})\n`;
     }
     list += `\n═══════════════════════════════════════\nTotal capteurs: ${selectedSensors.length} | Modules NQ: ${M}\n═══════════════════════════════════════\n`;
 
