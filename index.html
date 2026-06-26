@@ -264,6 +264,13 @@
                         <button class="length-btn" data-group="nqmodel" data-nq="NQ-EP4L" style="flex:1;font-size:0.78em;">NQ-EP4L<br><span style="font-weight:400;opacity:0.8;">4 ports · M8</span></button>
                     </div>
                 </div>
+                <div style="margin-bottom:8px;">
+                    <label style="font-size:0.82em;color:#9ca3af;margin-bottom:5px;display:block;">Mode connexion :</label>
+                    <div style="display:flex;gap:6px;">
+                        <button class="length-btn active" data-group="cascademode" data-cascade="true" style="flex:1;font-size:0.78em;">🔗 Cascade<br><span style="font-weight:400;opacity:0.8;">Modules liés</span></button>
+                        <button class="length-btn" data-group="cascademode" data-cascade="false" style="flex:1;font-size:0.78em;">⚡ Autonome<br><span style="font-weight:400;opacity:0.8;">Alim. seule</span></button>
+                    </div>
+                </div>
                 <div id="nqModulesList" class="selected-sensors-list">
                     <div class="empty-state" style="padding:15px;">
                         <p style="font-size:0.85em;">Ajoutez des capteurs</p>
@@ -309,6 +316,7 @@ const NQ_MODELS = {
     'NQ-EP4L': { ports: 4 }
 };
 let selectedNQModel = 'NQ-MP8L';
+let cascadeMode = true;
 function getPortsPerModule() { return NQ_MODELS[selectedNQModel].ports; }
 
 /* ── Images ────────────────────────────────────────────────────────── */
@@ -491,7 +499,8 @@ function init() {
         if (g === 'shape')    selectedCableShape    = btn.dataset.shape;
         if (g === 'power')  { powerCableLength   = btn.dataset.length; updateSchema(); }
         if (g === 'network'){ networkCableLength  = btn.dataset.length; updateSchema(); }
-        if (g === 'nqmodel'){ selectedNQModel = btn.dataset.nq; updateNQModules(); updateSchema(); }
+        if (g === 'nqmodel')    { selectedNQModel = btn.dataset.nq; updateNQModules(); updateSchema(); }
+        if (g === 'cascademode'){ cascadeMode = btn.dataset.cascade === 'true'; updateNQModules(); updateSchema(); }
     });
     const ro = new ResizeObserver(() => { if (selectedSensors.length) updateSchema(); });
     ro.observe(document.getElementById('schemaContent'));
@@ -595,15 +604,20 @@ function updateNQModules() {
         ps.style.display = ns.style.display = 'none';
         return;
     }
-    ps.style.display = ns.style.display = 'block';
+    ps.style.display = 'block';
+    ns.style.display = cascadeMode ? 'block' : 'none';
 
     let html = '';
-    if (M > 1) html += `<div class="alert alert-info"><span>ℹ️</span><div><strong>Info :</strong> ${M} modules NQ nécessaires (${total} capteurs)</div></div>`;
+    if (M > 1 && cascadeMode)  html += `<div class="alert alert-info"><span>ℹ️</span><div><strong>Info :</strong> ${M} modules NQ en cascade (${total} capteurs)</div></div>`;
+    if (M > 1 && !cascadeMode) html += `<div class="alert alert-info"><span>ℹ️</span><div><strong>Info :</strong> ${M} modules NQ autonomes (${total} capteurs)</div></div>`;
     for (let i = 0; i < M; i++) {
         const used = Math.min(getPortsPerModule(), total - i * getPortsPerModule());
+        const badge = cascadeMode && i > 0
+            ? '<span class="badge" style="background:#8b5cf6;">CASCADE</span>'
+            : (!cascadeMode ? '<span class="badge" style="background:#f59e0b;">AUTONOME</span>' : '');
         html += `<div class="sensor-tag" style="border-left-color:#dc2626;">
             <div class="sensor-tag-info">
-                <div class="sensor-tag-name">⚡ ${selectedNQModel} #${i+1}${i>0?'<span class="badge" style="background:#8b5cf6;">CASCADE</span>':''}</div>
+                <div class="sensor-tag-name">⚡ ${selectedNQModel} #${i+1}${badge}</div>
                 <div class="sensor-tag-desc">${used}/${getPortsPerModule()} ports • ${getPortsPerModule()-used} libre(s)</div>
             </div></div>`;
     }
@@ -711,39 +725,56 @@ function updateSchema() {
         p.push(`<text x="${MOD_X + MOD_W/2}" y="${mTop + MOD_H + 24}" text-anchor="middle" font-size="7.5" fill="#999" font-family="Segoe UI,Arial,sans-serif">${sN-s0}/${getPortsPerModule()} ports</text>`);
     }
 
-    /* ── Alimentation (bleu) → Module 1 ── */
-    const m0 = _modGeom(0);
-    const powPortY = m0.top + Math.round(MOD_H * 0.28);
+    if (cascadeMode) {
+        /* ── CASCADE : Alimentation → Module 1 ── */
+        const m0 = _modGeom(0);
+        const powPortY = m0.top + Math.round(MOD_H * 0.28);
 
-    p.push(`<polyline points="${MOD_RIGHT},${powPortY} ${TURN_X},${powPortY} ${TURN_X},${POW_CY} ${POWER_CX - POWER_R},${POW_CY}" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`);
-    p.push(svgLabel(Math.round((MOD_RIGHT + TURN_X) / 2), powPortY - 10, `${getPowerCable()} • ${powerCableLength}`, '#3b82f6'));
+        p.push(`<polyline points="${MOD_RIGHT},${powPortY} ${TURN_X},${powPortY} ${TURN_X},${POW_CY} ${POWER_CX - POWER_R},${POW_CY}" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`);
+        p.push(svgLabel(Math.round((MOD_RIGHT + TURN_X) / 2), powPortY - 10, `${getPowerCable()} • ${powerCableLength}`, '#3b82f6'));
 
-    /* Icône alimentation */
-    p.push(`<circle cx="${POWER_CX}" cy="${POW_CY}" r="${POWER_R}" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/>`);
-    p.push(`<text x="${POWER_CX}" y="${POW_CY + 9}" text-anchor="middle" dominant-baseline="middle" font-size="24">⚡</text>`);
+        /* Icône alimentation */
+        p.push(`<circle cx="${POWER_CX}" cy="${POW_CY}" r="${POWER_R}" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/>`);
+        p.push(`<text x="${POWER_CX}" y="${POW_CY + 9}" text-anchor="middle" dominant-baseline="middle" font-size="24">⚡</text>`);
 
-    /* ── Réseau (vert) → Dernier module ── */
-    const mLast = _modGeom(M - 1);
-    const pcPortY = mLast.top + Math.round(MOD_H * 0.72);
-    const TX2 = TURN_X + 18;
+        /* ── Réseau (vert) → Dernier module ── */
+        const mLast = _modGeom(M - 1);
+        const pcPortY = mLast.top + Math.round(MOD_H * 0.72);
+        const TX2 = TURN_X + 18;
 
-    p.push(`<polyline points="${MOD_RIGHT},${pcPortY} ${TX2},${pcPortY} ${TX2},${PC_CY} ${PC_CX - PC_W/2},${PC_CY}" fill="none" stroke="#10b981" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`);
-    p.push(svgLabel(Math.round((MOD_RIGHT + TX2) / 2), pcPortY + 12, `${getNetworkCable()} • ${networkCableLength}`, '#10b981'));
+        p.push(`<polyline points="${MOD_RIGHT},${pcPortY} ${TX2},${pcPortY} ${TX2},${PC_CY} ${PC_CX - PC_W/2},${PC_CY}" fill="none" stroke="#10b981" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`);
+        p.push(svgLabel(Math.round((MOD_RIGHT + TX2) / 2), pcPortY + 12, `${getNetworkCable()} • ${networkCableLength}`, '#10b981'));
 
-    /* Icône PC */
-    p.push(laptopSVG(PC_CX - PC_W / 2, PC_CY - PC_H / 2, PC_W, PC_H));
+        /* Icône PC */
+        p.push(laptopSVG(PC_CX - PC_W / 2, PC_CY - PC_H / 2, PC_W, PC_H));
 
-    /* ── Cascade entre modules ── */
-    for (let mi = 0; mi < M - 1; mi++) {
-        const mA = _modGeom(mi);
-        const mB = _modGeom(mi + 1);
-        const y1  = mA.top + MOD_H;
-        const y2  = mB.top;
-        const cy2 = Math.round((y1 + y2) / 2);
+        /* ── Câbles cascade entre modules ── */
+        for (let mi = 0; mi < M - 1; mi++) {
+            const mA = _modGeom(mi);
+            const mB = _modGeom(mi + 1);
+            const y1  = mA.top + MOD_H;
+            const y2  = mB.top;
+            const cy2 = Math.round((y1 + y2) / 2);
 
-        p.push(`<line x1="${CAS_BX}" y1="${y1}" x2="${CAS_BX}" y2="${y2}" stroke="#3b82f6" stroke-width="2.5"/>`);
-        p.push(`<line x1="${CAS_GX}" y1="${y1}" x2="${CAS_GX}" y2="${y2}" stroke="#10b981" stroke-width="2.5"/>`);
-        p.push(svgLabel(CAS_BX + 38, cy2, `${getCascadeCable()} • 2m`, '#8b5cf6'));
+            p.push(`<line x1="${CAS_BX}" y1="${y1}" x2="${CAS_BX}" y2="${y2}" stroke="#3b82f6" stroke-width="2.5"/>`);
+            p.push(`<line x1="${CAS_GX}" y1="${y1}" x2="${CAS_GX}" y2="${y2}" stroke="#10b981" stroke-width="2.5"/>`);
+            p.push(svgLabel(CAS_BX + 38, cy2, `${getCascadeCable()} • 2m`, '#8b5cf6'));
+        }
+    } else {
+        /* ── AUTONOME : chaque module a son propre câble alimentation ── */
+        for (let mi = 0; mi < M; mi++) {
+            const mG   = _modGeom(mi);
+            const powY = mG.top + Math.round(MOD_H * 0.28);
+            const offX = TURN_X + mi * 10;
+            p.push(`<polyline points="${MOD_RIGHT},${powY} ${offX},${powY} ${offX},${POW_CY} ${POWER_CX - POWER_R},${POW_CY}" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`);
+            if (mi === 0) {
+                const lbl = M > 1 ? `${M}× ${getPowerCable()} • ${powerCableLength}` : `${getPowerCable()} • ${powerCableLength}`;
+                p.push(svgLabel(Math.round((MOD_RIGHT + offX) / 2), powY - 10, lbl, '#3b82f6'));
+            }
+        }
+        /* Icône alimentation */
+        p.push(`<circle cx="${POWER_CX}" cy="${POW_CY}" r="${POWER_R}" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/>`);
+        p.push(`<text x="${POWER_CX}" y="${POW_CY + 9}" text-anchor="middle" dominant-baseline="middle" font-size="24">⚡</text>`);
     }
 
     container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${SVG_W}" height="${SVG_H}" style="display:block;">
@@ -848,8 +879,10 @@ function exportShoppingList() {
 
     list += `\n⚡ MODULES NQ:\n  • ${M}x ${selectedNQModel}\n`;
     list += `\n🔋 CÂBLES ALIMENTATION:\n  • ${M}x ${getPowerCable()} (${powerCableLength})\n`;
-    list += `\n🌐 CÂBLES RÉSEAU:\n  • 1x ${getNetworkCable()} (${networkCableLength})\n`;
-    if (M > 1) list += `\n🔗 CÂBLES CASCADE:\n  • ${M-1}x ${getCascadeCable()} (2m)\n`;
+    if (cascadeMode) {
+        list += `\n🌐 CÂBLES RÉSEAU:\n  • 1x ${getNetworkCable()} (${networkCableLength})\n`;
+        if (M > 1) list += `\n🔗 CÂBLES CASCADE:\n  • ${M-1}x ${getCascadeCable()} (2m)\n`;
+    }
     list += `\n═══════════════════════════════════════\nTotal capteurs: ${selectedSensors.length} | Modules NQ: ${M}\n═══════════════════════════════════════\n`;
 
     const a = Object.assign(document.createElement('a'), {
