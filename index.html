@@ -214,39 +214,33 @@
 
             <!-- Col 1 : Sélection capteur -->
             <div class="selection-column">
-                <div class="selection-title" id="sensorPanelHeader" onclick="toggleSensorPanel()"
-                     style="cursor:pointer;user-select:none;display:flex;justify-content:space-between;align-items:center;">
-                    <span>1️⃣ Sélection du Capteur</span>
-                    <span id="sensorPanelArrow" style="font-size:0.75em;transition:transform 0.25s;display:inline-block;">▼</span>
-                </div>
-                <div id="sensorPanelBody">
-                    <select id="sensorSeries" onchange="updateSensorModels()" style="margin-top:6px;">
-                        <option value="">-- Sélectionnez une gamme --</option>
-                    </select>
-                    <div id="modelsGrid" class="models-grid" style="display:none;"></div>
-                    <div id="cableLengthSelector" style="display:none;">
-                        <label style="font-size:0.82em;color:#9ca3af;margin-bottom:4px;display:block;">Longueur :</label>
-                        <div class="cable-length-selector">
-                            <button class="length-btn active" data-group="sensor" data-length="2m">2m</button>
-                            <button class="length-btn" data-group="sensor" data-length="5m">5m</button>
-                            <button class="length-btn" data-group="sensor" data-length="10m">10m</button>
-                            <button class="length-btn" data-group="sensor" data-length="20m">20m</button>
-                        </div>
-                        <label style="font-size:0.82em;color:#9ca3af;margin:6px 0 4px;display:block;">Matériau :</label>
-                        <div class="cable-length-selector">
-                            <button class="length-btn active" data-group="material" data-mat="pvc">PVC</button>
-                            <button class="length-btn" data-group="material" data-mat="pur">PUR</button>
-                        </div>
-                        <label style="font-size:0.82em;color:#9ca3af;margin:6px 0 4px;display:block;">Coupe :</label>
-                        <div class="cable-length-selector">
-                            <button class="length-btn active" data-group="shape" data-shape="straight">Droit</button>
-                            <button class="length-btn" data-group="shape" data-shape="l">En L</button>
-                        </div>
+                <div class="selection-title">1️⃣ Sélection du Capteur</div>
+                <select id="sensorSeries" onchange="updateSensorModels()">
+                    <option value="">-- Sélectionnez une gamme --</option>
+                </select>
+                <div id="modelsGrid" class="models-grid" style="display:none;"></div>
+                <div id="cableLengthSelector" style="display:none;">
+                    <label style="font-size:0.82em;color:#9ca3af;margin-bottom:4px;display:block;">Longueur :</label>
+                    <div class="cable-length-selector">
+                        <button class="length-btn active" data-group="sensor" data-length="2m">2m</button>
+                        <button class="length-btn" data-group="sensor" data-length="5m">5m</button>
+                        <button class="length-btn" data-group="sensor" data-length="10m">10m</button>
+                        <button class="length-btn" data-group="sensor" data-length="20m">20m</button>
                     </div>
-                    <button class="btn-add" id="btnAddSensor" onclick="addSensor()" disabled>
-                        ➕ Ajouter le capteur
-                    </button>
+                    <label style="font-size:0.82em;color:#9ca3af;margin:6px 0 4px;display:block;">Matériau :</label>
+                    <div class="cable-length-selector">
+                        <button class="length-btn active" data-group="material" data-mat="pvc">PVC</button>
+                        <button class="length-btn" data-group="material" data-mat="pur">PUR</button>
+                    </div>
+                    <label style="font-size:0.82em;color:#9ca3af;margin:6px 0 4px;display:block;">Coupe :</label>
+                    <div class="cable-length-selector">
+                        <button class="length-btn active" data-group="shape" data-shape="straight">Droit</button>
+                        <button class="length-btn" data-group="shape" data-shape="l">En L</button>
+                    </div>
                 </div>
+                <button class="btn-add" id="btnAddSensor" onclick="addSensor()" disabled>
+                    ➕ Ajouter le capteur
+                </button>
             </div>
 
             <!-- Col 2 : Capteurs sélectionnés -->
@@ -262,48 +256,54 @@
 
             <!-- Col 3 : Modules NQ -->
             <div class="selection-column">
-                <div class="selection-title">2️⃣ Modules NQ Requis (<span id="nqCount">0</span>)</div>
-                <div style="margin-bottom:8px;">
-                    <label style="font-size:0.82em;color:#9ca3af;margin-bottom:5px;display:block;">Modèle de module NQ :</label>
-                    <div style="display:flex;gap:6px;">
-                        <button class="length-btn active" data-group="nqmodel" data-nq="NQ-MP8L" style="flex:1;font-size:0.78em;">NQ-MP8L<br><span style="font-weight:400;opacity:0.8;">8 ports · M12</span></button>
-                        <button class="length-btn" data-group="nqmodel" data-nq="NQ-EP4L" style="flex:1;font-size:0.78em;">NQ-EP4L<br><span style="font-weight:400;opacity:0.8;">4 ports · M8</span></button>
-                    </div>
+                <div class="selection-title" id="nqPanelHeader" onclick="toggleNQPanel()"
+                     style="cursor:pointer;user-select:none;display:flex;justify-content:space-between;align-items:center;">
+                    <span>2️⃣ Modules NQ Requis (<span id="nqCount">0</span>)</span>
+                    <span id="nqPanelArrow" style="font-size:0.75em;transition:transform 0.25s;display:inline-block;">▼</span>
                 </div>
-                <div style="margin-bottom:8px;">
-                    <label style="font-size:0.82em;color:#9ca3af;margin-bottom:5px;display:block;">Mode connexion :</label>
-                    <div style="display:flex;gap:6px;">
-                        <button class="length-btn active" data-group="cascademode" data-cascade="true" style="flex:1;font-size:0.78em;">🔗 Cascade<br><span style="font-weight:400;opacity:0.8;">Modules liés</span></button>
-                        <button class="length-btn" data-group="cascademode" data-cascade="false" style="flex:1;font-size:0.78em;">⚡ Autonome<br><span style="font-weight:400;opacity:0.8;">Alim. seule</span></button>
+                <div id="nqPanelBody">
+                    <div style="margin-bottom:8px;margin-top:6px;">
+                        <label style="font-size:0.82em;color:#9ca3af;margin-bottom:5px;display:block;">Modèle de module NQ :</label>
+                        <div style="display:flex;gap:6px;">
+                            <button class="length-btn active" data-group="nqmodel" data-nq="NQ-MP8L" style="flex:1;font-size:0.78em;">NQ-MP8L<br><span style="font-weight:400;opacity:0.8;">8 ports · M12</span></button>
+                            <button class="length-btn" data-group="nqmodel" data-nq="NQ-EP4L" style="flex:1;font-size:0.78em;">NQ-EP4L<br><span style="font-weight:400;opacity:0.8;">4 ports · M8</span></button>
+                        </div>
                     </div>
-                </div>
-                <div id="nqModulesList" class="selected-sensors-list">
-                    <div class="empty-state" style="padding:15px;">
-                        <p style="font-size:0.85em;">Ajoutez des capteurs</p>
+                    <div style="margin-bottom:8px;">
+                        <label style="font-size:0.82em;color:#9ca3af;margin-bottom:5px;display:block;">Mode connexion :</label>
+                        <div style="display:flex;gap:6px;">
+                            <button class="length-btn active" data-group="cascademode" data-cascade="true" style="flex:1;font-size:0.78em;">🔗 Cascade<br><span style="font-weight:400;opacity:0.8;">Modules liés</span></button>
+                            <button class="length-btn" data-group="cascademode" data-cascade="false" style="flex:1;font-size:0.78em;">⚡ Autonome<br><span style="font-weight:400;opacity:0.8;">Alim. seule</span></button>
+                        </div>
                     </div>
-                </div>
-                <div id="powerCableSelector" style="display:none;margin-top:10px;">
-                    <label style="font-size:0.85em;color:#9ca3af;margin-bottom:5px;display:block;">Longueur câble alimentation :</label>
-                    <div class="cable-length-selector">
-                        <button class="length-btn power-length" data-group="power" data-length="2m">2m</button>
-                        <button class="length-btn power-length" data-group="power" data-length="5m">5m</button>
-                        <button class="length-btn power-length active" data-group="power" data-length="10m">10m</button>
+                    <div id="nqModulesList" class="selected-sensors-list">
+                        <div class="empty-state" style="padding:15px;">
+                            <p style="font-size:0.85em;">Ajoutez des capteurs</p>
+                        </div>
                     </div>
-                </div>
-                <div id="networkCableSelector" style="display:none;margin-top:10px;">
-                    <label style="font-size:0.85em;color:#9ca3af;margin-bottom:5px;display:block;">Longueur câble Ethernet :</label>
-                    <div class="cable-length-selector">
-                        <button class="length-btn network-length active" data-group="network" data-length="2m">2m</button>
-                        <button class="length-btn network-length" data-group="network" data-length="5m">5m</button>
-                        <button class="length-btn network-length" data-group="network" data-length="10m">10m</button>
+                    <div id="powerCableSelector" style="display:none;margin-top:10px;">
+                        <label style="font-size:0.85em;color:#9ca3af;margin-bottom:5px;display:block;">Longueur câble alimentation :</label>
+                        <div class="cable-length-selector">
+                            <button class="length-btn power-length" data-group="power" data-length="2m">2m</button>
+                            <button class="length-btn power-length" data-group="power" data-length="5m">5m</button>
+                            <button class="length-btn power-length active" data-group="power" data-length="10m">10m</button>
+                        </div>
                     </div>
-                </div>
-                <div id="cascadeCableSelector" style="display:none;margin-top:10px;">
-                    <label style="font-size:0.85em;color:#9ca3af;margin-bottom:5px;display:block;">Longueur câble cascade :</label>
-                    <div class="cable-length-selector">
-                        <button class="length-btn cascade-length" data-group="cascadelength" data-length="0.3m">0.3m</button>
-                        <button class="length-btn cascade-length active" data-group="cascadelength" data-length="2m">2m</button>
-                        <button class="length-btn cascade-length" data-group="cascadelength" data-length="10m">10m</button>
+                    <div id="networkCableSelector" style="display:none;margin-top:10px;">
+                        <label style="font-size:0.85em;color:#9ca3af;margin-bottom:5px;display:block;">Longueur câble Ethernet :</label>
+                        <div class="cable-length-selector">
+                            <button class="length-btn network-length active" data-group="network" data-length="2m">2m</button>
+                            <button class="length-btn network-length" data-group="network" data-length="5m">5m</button>
+                            <button class="length-btn network-length" data-group="network" data-length="10m">10m</button>
+                        </div>
+                    </div>
+                    <div id="cascadeCableSelector" style="display:none;margin-top:10px;">
+                        <label style="font-size:0.85em;color:#9ca3af;margin-bottom:5px;display:block;">Longueur câble cascade :</label>
+                        <div class="cable-length-selector">
+                            <button class="length-btn cascade-length" data-group="cascadelength" data-length="0.3m">0.3m</button>
+                            <button class="length-btn cascade-length active" data-group="cascadelength" data-length="2m">2m</button>
+                            <button class="length-btn cascade-length" data-group="cascadelength" data-length="10m">10m</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -571,12 +571,12 @@ function selectModel(model, card) {
 }
 
 /* ── Ajout / suppression ───────────────────────────────────────────── */
-function toggleSensorPanel(forceOpen) {
-    const body  = document.getElementById('sensorPanelBody');
-    const arrow = document.getElementById('sensorPanelArrow');
-    const open  = forceOpen !== undefined ? !forceOpen : body.style.display !== 'none';
-    body.style.display       = open ? 'none' : 'block';
-    arrow.style.transform    = open ? 'rotate(-90deg)' : 'rotate(0deg)';
+function toggleNQPanel() {
+    const body  = document.getElementById('nqPanelBody');
+    const arrow = document.getElementById('nqPanelArrow');
+    const open  = body.style.display !== 'none';
+    body.style.display    = open ? 'none' : 'block';
+    arrow.style.transform = open ? 'rotate(-90deg)' : 'rotate(0deg)';
 }
 
 function addSensor() {
@@ -586,10 +586,7 @@ function addSensor() {
 
     const btn = document.getElementById('btnAddSensor');
     btn.classList.add('success'); btn.textContent = '✓ Ajouté !';
-    setTimeout(() => {
-        btn.classList.remove('success'); btn.textContent = '➕ Ajouter le capteur';
-        toggleSensorPanel(false); // referme le panneau
-    }, 1000);
+    setTimeout(() => { btn.classList.remove('success'); btn.textContent = '➕ Ajouter le capteur'; }, 1200);
 
     updateSelectedSensorsList();
     updateNQModules();
