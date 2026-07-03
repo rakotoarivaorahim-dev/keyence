@@ -871,7 +871,9 @@ function getNetworkCable() {
 }
 
 function getCascadeCable() {
-    if (selectedNQModel === 'NQ-EP4L') return 'OP-88453'; // longueurs EP4L à confirmer
+    if (selectedNQModel === 'NQ-EP4L')
+        return cascadeCableLength === '0.3m' ? 'NQ-P4C03' :
+               cascadeCableLength === '10m'  ? 'NQ-P4C10' : 'NQ-P4C2';
     return cascadeCableLength === '0.3m' ? 'NQ-P8C03' :
            cascadeCableLength === '10m'  ? 'NQ-P8C10' : 'NQ-P8C2';
 }
