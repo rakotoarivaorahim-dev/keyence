@@ -787,27 +787,43 @@ function updateSchema() {
             p.push(svgLabel(CAS_GX + 36, cy2 + 9, `${getCascadeCommCable()} • ${cascadeCableLength}`, '#10b981'));
         }
     } else {
-        /* ── AUTONOME : chaque module a son propre câble alim + réseau ── */
+        /* ── AUTONOME : pattern alterné par module ──────────────────────
+           Module pair  (0,2…) : ⚡ en haut  · 💻 en bas
+           Module impair (1,3…): 💻 en haut  · ⚡ en bas              */
         for (let mi = 0; mi < M; mi++) {
-            const mG    = _modGeom(mi);
-            const powY  = mG.top + Math.round(MOD_H * 0.28);
-            const netY  = mG.top + Math.round(MOD_H * 0.72);
-            const offXP = TURN_X      + mi * 10;
-            const offXN = TURN_X + 18 + mi * 10;
+            const mG     = _modGeom(mi);
+            const isEven = (mi % 2 === 0);
+            const s0     = mi * getPortsPerModule();
+            const sN     = Math.min(s0 + getPortsPerModule(), N);
+            const s0y    = TOP_PAD + s0 * SLOT_H;
+            const sNy    = TOP_PAD + sN * SLOT_H;
 
-            /* Câble alimentation (bleu) — référence sur chaque ligne */
-            p.push(`<polyline points="${MOD_RIGHT},${powY} ${offXP},${powY} ${offXP},${POW_CY} ${POWER_CX - POWER_R},${POW_CY}" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`);
-            p.push(svgLabel(Math.round((MOD_RIGHT + offXP) / 2), powY - 10, `${getPowerCable()} • ${powerCableLength}`, '#3b82f6'));
+            /* Y des icônes : colle aux bords haut/bas pour le 1er et dernier module */
+            const aboveY = (mi === 0)   ? POW_CY : Math.max(POWER_R + 8, s0y - POWER_R * 2 - 8);
+            const belowY = (mi === M-1) ? PC_CY  : Math.min(SVG_H - POWER_R - 8, sNy + POWER_R + 8);
 
-            /* Câble réseau (vert) — référence sur chaque ligne */
-            p.push(`<polyline points="${MOD_RIGHT},${netY} ${offXN},${netY} ${offXN},${PC_CY} ${PC_CX - PC_W/2},${PC_CY}" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`);
-            p.push(svgLabel(Math.round((MOD_RIGHT + offXN) / 2), netY + 12, `${getNetworkCable()} • ${networkCableLength}`, '#10b981'));
+            /* Ports du module et icônes selon parité */
+            const powPortY = isEven ? mG.top + Math.round(MOD_H * 0.28) : mG.top + Math.round(MOD_H * 0.72);
+            const netPortY = isEven ? mG.top + Math.round(MOD_H * 0.72) : mG.top + Math.round(MOD_H * 0.28);
+            const powIconY = isEven ? aboveY : belowY;
+            const pcIconY  = isEven ? belowY : aboveY;
+            /* Label au-dessus si câble monte, en-dessous si câble descend */
+            const powLblDY = isEven ? -10 : 12;
+            const netLblDY = isEven ?  12 : -10;
+
+            const TX2 = TURN_X + 18;
+
+            /* Câble alimentation (bleu) */
+            p.push(`<polyline points="${MOD_RIGHT},${powPortY} ${TURN_X},${powPortY} ${TURN_X},${powIconY} ${POWER_CX - POWER_R},${powIconY}" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`);
+            p.push(svgLabel(Math.round((MOD_RIGHT + TURN_X) / 2), powPortY + powLblDY, `${getPowerCable()} • ${powerCableLength}`, '#3b82f6'));
+            p.push(`<circle cx="${POWER_CX}" cy="${powIconY}" r="${POWER_R}" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/>`);
+            p.push(`<text x="${POWER_CX}" y="${powIconY + 9}" text-anchor="middle" dominant-baseline="middle" font-size="24">⚡</text>`);
+
+            /* Câble réseau (vert) */
+            p.push(`<polyline points="${MOD_RIGHT},${netPortY} ${TX2},${netPortY} ${TX2},${pcIconY} ${PC_CX - PC_W/2},${pcIconY}" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`);
+            p.push(svgLabel(Math.round((MOD_RIGHT + TX2) / 2), netPortY + netLblDY, `${getNetworkCable()} • ${networkCableLength}`, '#10b981'));
+            p.push(laptopSVG(PC_CX - PC_W / 2, pcIconY - PC_H / 2, PC_W, PC_H));
         }
-        /* Icône alimentation */
-        p.push(`<circle cx="${POWER_CX}" cy="${POW_CY}" r="${POWER_R}" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/>`);
-        p.push(`<text x="${POWER_CX}" y="${POW_CY + 9}" text-anchor="middle" dominant-baseline="middle" font-size="24">⚡</text>`);
-        /* Icône PC */
-        p.push(laptopSVG(PC_CX - PC_W / 2, PC_CY - PC_H / 2, PC_W, PC_H));
     }
 
     container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${SVG_W}" height="${SVG_H}" style="display:block;">
