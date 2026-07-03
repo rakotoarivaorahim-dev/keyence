@@ -787,20 +787,34 @@ function updateSchema() {
             p.push(svgLabel(CAS_GX + 36, cy2 + 9, `${getCascadeCommCable()} • ${cascadeCableLength}`, '#10b981'));
         }
     } else {
-        /* ── AUTONOME : pattern alterné par module ──────────────────────
-           Module pair  (0,2…) : ⚡ en haut  · 💻 en bas
-           Module impair (1,3…): 💻 en haut  · ⚡ en bas              */
+        /* ── AUTONOME : chaque module dans son propre canal X ───────────
+           La zone droite [MOD_RIGHT … SVG_W] est divisée en M canaux.
+           Dans chaque canal :
+             mTurnX   = virage câble bleu (alimentation)
+             mTurnX2  = virage câble vert  (réseau)
+             mPowerCX = centre icône ⚡
+             mPcCX    = centre icône 💻
+           Les icônes sont empilées verticalement dans le canal, évitant
+           tout croisement entre modules.                                */
+        const chanW = Math.round((SVG_W - MOD_RIGHT - 10) / M);
         for (let mi = 0; mi < M; mi++) {
-            const mG     = _modGeom(mi);
-            const isEven = (mi % 2 === 0);
-            const s0     = mi * getPortsPerModule();
-            const sN     = Math.min(s0 + getPortsPerModule(), N);
-            const s0y    = TOP_PAD + s0 * SLOT_H;
-            const sNy    = TOP_PAD + sN * SLOT_H;
+            const mG      = _modGeom(mi);
+            const isEven  = (mi % 2 === 0);
+            const s0      = mi * getPortsPerModule();
+            const sN      = Math.min(s0 + getPortsPerModule(), N);
+            const s0y     = TOP_PAD + s0 * SLOT_H;
+            const sNy     = TOP_PAD + sN * SLOT_H;
+
+            /* Canal X dédié à ce module */
+            const chanLeft = MOD_RIGHT + mi * chanW;
+            const mTurnX   = chanLeft + Math.round(chanW * 0.18);
+            const mTurnX2  = chanLeft + Math.round(chanW * 0.36);
+            const mIconCX  = chanLeft + Math.round(chanW * 0.72);
 
             /* Y des icônes : colle aux bords haut/bas pour le 1er et dernier module */
             const aboveY = (mi === 0)   ? POW_CY : Math.max(POWER_R + 8, s0y - POWER_R * 2 - 8);
-            const belowY = (mi === M-1) ? PC_CY  : Math.min(SVG_H - POWER_R - 8, sNy + POWER_R + 8);
+            const belowY = (mi === M-1) ? Math.min(SVG_H - POWER_R - 8, PC_CY)
+                                        : Math.min(SVG_H - POWER_R - 8, sNy + POWER_R + 8);
 
             /* Ports du module et icônes selon parité */
             const powPortY = isEven ? mG.top + Math.round(MOD_H * 0.28) : mG.top + Math.round(MOD_H * 0.72);
@@ -811,18 +825,16 @@ function updateSchema() {
             const powLblDY = isEven ? -10 : 12;
             const netLblDY = isEven ?  12 : -10;
 
-            const TX2 = TURN_X + 18;
+            /* Câble alimentation (bleu) — canal propre à ce module */
+            p.push(`<polyline points="${MOD_RIGHT},${powPortY} ${mTurnX},${powPortY} ${mTurnX},${powIconY} ${mIconCX - POWER_R},${powIconY}" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`);
+            p.push(svgLabel(Math.round((MOD_RIGHT + mTurnX) / 2), powPortY + powLblDY, `${getPowerCable()} • ${powerCableLength}`, '#3b82f6'));
+            p.push(`<circle cx="${mIconCX}" cy="${powIconY}" r="${POWER_R}" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/>`);
+            p.push(`<text x="${mIconCX}" y="${powIconY + 9}" text-anchor="middle" dominant-baseline="middle" font-size="24">⚡</text>`);
 
-            /* Câble alimentation (bleu) */
-            p.push(`<polyline points="${MOD_RIGHT},${powPortY} ${TURN_X},${powPortY} ${TURN_X},${powIconY} ${POWER_CX - POWER_R},${powIconY}" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`);
-            p.push(svgLabel(Math.round((MOD_RIGHT + TURN_X) / 2), powPortY + powLblDY, `${getPowerCable()} • ${powerCableLength}`, '#3b82f6'));
-            p.push(`<circle cx="${POWER_CX}" cy="${powIconY}" r="${POWER_R}" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/>`);
-            p.push(`<text x="${POWER_CX}" y="${powIconY + 9}" text-anchor="middle" dominant-baseline="middle" font-size="24">⚡</text>`);
-
-            /* Câble réseau (vert) */
-            p.push(`<polyline points="${MOD_RIGHT},${netPortY} ${TX2},${netPortY} ${TX2},${pcIconY} ${PC_CX - PC_W/2},${pcIconY}" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`);
-            p.push(svgLabel(Math.round((MOD_RIGHT + TX2) / 2), netPortY + netLblDY, `${getNetworkCable()} • ${networkCableLength}`, '#10b981'));
-            p.push(laptopSVG(PC_CX - PC_W / 2, pcIconY - PC_H / 2, PC_W, PC_H));
+            /* Câble réseau (vert) — canal propre à ce module */
+            p.push(`<polyline points="${MOD_RIGHT},${netPortY} ${mTurnX2},${netPortY} ${mTurnX2},${pcIconY} ${mIconCX - PC_W/2},${pcIconY}" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`);
+            p.push(svgLabel(Math.round((MOD_RIGHT + mTurnX2) / 2), netPortY + netLblDY, `${getNetworkCable()} • ${networkCableLength}`, '#10b981'));
+            p.push(laptopSVG(mIconCX - PC_W / 2, pcIconY - PC_H / 2, PC_W, PC_H));
         }
     }
 
