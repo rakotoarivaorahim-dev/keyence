@@ -214,33 +214,39 @@
 
             <!-- Col 1 : Sélection capteur -->
             <div class="selection-column">
-                <div class="selection-title">1️⃣ Sélection du Capteur</div>
-                <select id="sensorSeries" onchange="updateSensorModels()">
-                    <option value="">-- Sélectionnez une gamme --</option>
-                </select>
-                <div id="modelsGrid" class="models-grid" style="display:none;"></div>
-                <div id="cableLengthSelector" style="display:none;">
-                    <label style="font-size:0.82em;color:#9ca3af;margin-bottom:4px;display:block;">Longueur :</label>
-                    <div class="cable-length-selector">
-                        <button class="length-btn active" data-group="sensor" data-length="2m">2m</button>
-                        <button class="length-btn" data-group="sensor" data-length="5m">5m</button>
-                        <button class="length-btn" data-group="sensor" data-length="10m">10m</button>
-                        <button class="length-btn" data-group="sensor" data-length="20m">20m</button>
-                    </div>
-                    <label style="font-size:0.82em;color:#9ca3af;margin:6px 0 4px;display:block;">Matériau :</label>
-                    <div class="cable-length-selector">
-                        <button class="length-btn active" data-group="material" data-mat="pvc">PVC</button>
-                        <button class="length-btn" data-group="material" data-mat="pur">PUR</button>
-                    </div>
-                    <label style="font-size:0.82em;color:#9ca3af;margin:6px 0 4px;display:block;">Coupe :</label>
-                    <div class="cable-length-selector">
-                        <button class="length-btn active" data-group="shape" data-shape="straight">Droit</button>
-                        <button class="length-btn" data-group="shape" data-shape="l">En L</button>
-                    </div>
+                <div class="selection-title" id="sensorPanelHeader" onclick="toggleSensorPanel()"
+                     style="cursor:pointer;user-select:none;display:flex;justify-content:space-between;align-items:center;">
+                    <span>1️⃣ Sélection du Capteur</span>
+                    <span id="sensorPanelArrow" style="font-size:0.75em;transition:transform 0.25s;display:inline-block;">▼</span>
                 </div>
-                <button class="btn-add" id="btnAddSensor" onclick="addSensor()" disabled>
-                    ➕ Ajouter le capteur
-                </button>
+                <div id="sensorPanelBody">
+                    <select id="sensorSeries" onchange="updateSensorModels()" style="margin-top:6px;">
+                        <option value="">-- Sélectionnez une gamme --</option>
+                    </select>
+                    <div id="modelsGrid" class="models-grid" style="display:none;"></div>
+                    <div id="cableLengthSelector" style="display:none;">
+                        <label style="font-size:0.82em;color:#9ca3af;margin-bottom:4px;display:block;">Longueur :</label>
+                        <div class="cable-length-selector">
+                            <button class="length-btn active" data-group="sensor" data-length="2m">2m</button>
+                            <button class="length-btn" data-group="sensor" data-length="5m">5m</button>
+                            <button class="length-btn" data-group="sensor" data-length="10m">10m</button>
+                            <button class="length-btn" data-group="sensor" data-length="20m">20m</button>
+                        </div>
+                        <label style="font-size:0.82em;color:#9ca3af;margin:6px 0 4px;display:block;">Matériau :</label>
+                        <div class="cable-length-selector">
+                            <button class="length-btn active" data-group="material" data-mat="pvc">PVC</button>
+                            <button class="length-btn" data-group="material" data-mat="pur">PUR</button>
+                        </div>
+                        <label style="font-size:0.82em;color:#9ca3af;margin:6px 0 4px;display:block;">Coupe :</label>
+                        <div class="cable-length-selector">
+                            <button class="length-btn active" data-group="shape" data-shape="straight">Droit</button>
+                            <button class="length-btn" data-group="shape" data-shape="l">En L</button>
+                        </div>
+                    </div>
+                    <button class="btn-add" id="btnAddSensor" onclick="addSensor()" disabled>
+                        ➕ Ajouter le capteur
+                    </button>
+                </div>
             </div>
 
             <!-- Col 2 : Capteurs sélectionnés -->
@@ -565,6 +571,14 @@ function selectModel(model, card) {
 }
 
 /* ── Ajout / suppression ───────────────────────────────────────────── */
+function toggleSensorPanel(forceOpen) {
+    const body  = document.getElementById('sensorPanelBody');
+    const arrow = document.getElementById('sensorPanelArrow');
+    const open  = forceOpen !== undefined ? !forceOpen : body.style.display !== 'none';
+    body.style.display       = open ? 'none' : 'block';
+    arrow.style.transform    = open ? 'rotate(-90deg)' : 'rotate(0deg)';
+}
+
 function addSensor() {
     if (!selectedModel) return;
     const key = document.getElementById('sensorSeries').value;
@@ -572,7 +586,10 @@ function addSensor() {
 
     const btn = document.getElementById('btnAddSensor');
     btn.classList.add('success'); btn.textContent = '✓ Ajouté !';
-    setTimeout(() => { btn.classList.remove('success'); btn.textContent = '➕ Ajouter le capteur'; }, 1200);
+    setTimeout(() => {
+        btn.classList.remove('success'); btn.textContent = '➕ Ajouter le capteur';
+        toggleSensorPanel(false); // referme le panneau
+    }, 1000);
 
     updateSelectedSensorsList();
     updateNQModules();
@@ -769,8 +786,8 @@ function updateSchema() {
 
             p.push(`<line x1="${CAS_BX}" y1="${y1}" x2="${CAS_BX}" y2="${y2}" stroke="#3b82f6" stroke-width="2.5"/>`);
             p.push(`<line x1="${CAS_GX}" y1="${y1}" x2="${CAS_GX}" y2="${y2}" stroke="#10b981" stroke-width="2.5"/>`);
-            p.push(svgLabel(CAS_BX + 36, cy2 - 9, `${getCascadeCable()} • ${cascadeCableLength}`, '#3b82f6'));
-            p.push(svgLabel(CAS_GX + 36, cy2 + 9, `${getCascadeCable()} • ${cascadeCableLength}`, '#10b981'));
+            p.push(svgLabel(CAS_BX + 36, cy2 - 9, `${getCascadePowerCable()} • ${cascadeCableLength}`, '#3b82f6'));
+            p.push(svgLabel(CAS_GX + 36, cy2 + 9, `${getCascadeCommCable()} • ${cascadeCableLength}`, '#10b981'));
         }
     } else {
         /* ── AUTONOME : chaque module a son propre câble alim + réseau ── */
@@ -870,12 +887,20 @@ function getNetworkCable() {
     return l==='2m'?'OP-88086':l==='5m'?'OP-88087':'OP-88088';
 }
 
-function getCascadeCable() {
+function getCascadePowerCable() {
     if (selectedNQModel === 'NQ-EP4L')
         return cascadeCableLength === '0.3m' ? 'NQ-P4C03' :
                cascadeCableLength === '10m'  ? 'NQ-P4C10' : 'NQ-P4C2';
     return cascadeCableLength === '0.3m' ? 'NQ-P8C03' :
            cascadeCableLength === '10m'  ? 'NQ-P8C10' : 'NQ-P8C2';
+}
+
+function getCascadeCommCable() {
+    if (selectedNQModel === 'NQ-EP4L')
+        return cascadeCableLength === '0.3m' ? 'OP-88452' :
+               cascadeCableLength === '10m'  ? 'OP-88454' : 'OP-88453';
+    return cascadeCableLength === '0.3m' ? 'OP-88451' :
+           cascadeCableLength === '10m'  ? 'OP-88091' : 'OP-88089';
 }
 
 /* ── Export ────────────────────────────────────────────────────────── */
@@ -904,7 +929,10 @@ function exportShoppingList() {
     list += `\n🔋 CÂBLES ALIMENTATION:\n  • ${M}x ${getPowerCable()} (${powerCableLength})\n`;
     if (cascadeMode) {
         list += `\n🌐 CÂBLES RÉSEAU:\n  • 1x ${getNetworkCable()} (${networkCableLength})\n`;
-        if (M > 1) list += `\n🔗 CÂBLES CASCADE:\n  • ${M-1}x ${getCascadeCable()} (${cascadeCableLength})\n`;
+        if (M > 1) {
+            list += `\n🔗 CÂBLES CASCADE ALIMENTATION:\n  • ${M-1}x ${getCascadePowerCable()} (${cascadeCableLength})\n`;
+            list += `\n🔗 CÂBLES CASCADE COMMUNICATION:\n  • ${M-1}x ${getCascadeCommCable()} (${cascadeCableLength})\n`;
+        }
     } else {
         list += `\n🌐 CÂBLES RÉSEAU:\n  • ${M}x ${getNetworkCable()} (${networkCableLength})\n`;
     }
