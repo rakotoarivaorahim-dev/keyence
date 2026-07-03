@@ -292,6 +292,14 @@
                         <button class="length-btn network-length" data-group="network" data-length="10m">10m</button>
                     </div>
                 </div>
+                <div id="cascadeCableSelector" style="display:none;margin-top:10px;">
+                    <label style="font-size:0.85em;color:#9ca3af;margin-bottom:5px;display:block;">Longueur câble cascade :</label>
+                    <div class="cable-length-selector">
+                        <button class="length-btn cascade-length" data-group="cascadelength" data-length="0.3m">0.3m</button>
+                        <button class="length-btn cascade-length active" data-group="cascadelength" data-length="2m">2m</button>
+                        <button class="length-btn cascade-length" data-group="cascadelength" data-length="10m">10m</button>
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -417,6 +425,7 @@ let selectedCableMaterial = 'pvc';   // 'pvc' | 'pur'
 let selectedCableShape    = 'straight'; // 'straight' | 'l'
 let powerCableLength    = '10m';
 let networkCableLength  = '2m';
+let cascadeCableLength  = '2m';
 
 /* ── SVG Schema constants ──────────────────────────────────────────── */
 const SC = {
@@ -499,8 +508,9 @@ function init() {
         if (g === 'shape')    selectedCableShape    = btn.dataset.shape;
         if (g === 'power')  { powerCableLength   = btn.dataset.length; updateSchema(); }
         if (g === 'network'){ networkCableLength  = btn.dataset.length; updateSchema(); }
-        if (g === 'nqmodel')    { selectedNQModel = btn.dataset.nq; updateNQModules(); updateSchema(); }
-        if (g === 'cascademode'){ cascadeMode = btn.dataset.cascade === 'true'; updateNQModules(); updateSchema(); }
+        if (g === 'nqmodel')     { selectedNQModel = btn.dataset.nq; updateNQModules(); updateSchema(); }
+        if (g === 'cascademode') { cascadeMode = btn.dataset.cascade === 'true'; updateNQModules(); updateSchema(); }
+        if (g === 'cascadelength'){ cascadeCableLength = btn.dataset.length; updateSchema(); }
     });
     const ro = new ResizeObserver(() => { if (selectedSensors.length) updateSchema(); });
     ro.observe(document.getElementById('schemaContent'));
@@ -595,16 +605,18 @@ function updateNQModules() {
     const c = document.getElementById('nqModulesList');
     const ps = document.getElementById('powerCableSelector');
     const ns = document.getElementById('networkCableSelector');
+    const cs = document.getElementById('cascadeCableSelector');
     const total = selectedSensors.length;
     const M = Math.ceil(total / getPortsPerModule());
     document.getElementById('nqCount').textContent = M;
 
     if (!M) {
         c.innerHTML = `<div class="empty-state" style="padding:15px;"><p style="font-size:0.85em;">Ajoutez des capteurs</p></div>`;
-        ps.style.display = ns.style.display = 'none';
+        ps.style.display = ns.style.display = cs.style.display = 'none';
         return;
     }
     ps.style.display = ns.style.display = 'block';
+    cs.style.display = (cascadeMode && M > 1) ? 'block' : 'none';
 
     let html = '';
     if (M > 1 && cascadeMode)  html += `<div class="alert alert-info"><span>ℹ️</span><div><strong>Info :</strong> ${M} modules NQ en cascade (${total} capteurs)</div></div>`;
@@ -757,7 +769,8 @@ function updateSchema() {
 
             p.push(`<line x1="${CAS_BX}" y1="${y1}" x2="${CAS_BX}" y2="${y2}" stroke="#3b82f6" stroke-width="2.5"/>`);
             p.push(`<line x1="${CAS_GX}" y1="${y1}" x2="${CAS_GX}" y2="${y2}" stroke="#10b981" stroke-width="2.5"/>`);
-            p.push(svgLabel(CAS_BX + 38, cy2, `${getCascadeCable()} • 2m`, '#8b5cf6'));
+            p.push(svgLabel(CAS_BX + 36, cy2 - 9, `${getCascadeCable()} • ${cascadeCableLength}`, '#3b82f6'));
+            p.push(svgLabel(CAS_GX + 36, cy2 + 9, `${getCascadeCable()} • ${cascadeCableLength}`, '#10b981'));
         }
     } else {
         /* ── AUTONOME : chaque module a son propre câble alim + réseau ── */
@@ -858,7 +871,9 @@ function getNetworkCable() {
 }
 
 function getCascadeCable() {
-    return selectedNQModel === 'NQ-EP4L' ? 'OP-88453' : 'OP-88089';
+    if (selectedNQModel === 'NQ-EP4L') return 'OP-88453'; // longueurs EP4L à confirmer
+    return cascadeCableLength === '0.3m' ? 'NQ-P8C03' :
+           cascadeCableLength === '10m'  ? 'NQ-P8C10' : 'NQ-P8C2';
 }
 
 /* ── Export ────────────────────────────────────────────────────────── */
@@ -887,7 +902,7 @@ function exportShoppingList() {
     list += `\n🔋 CÂBLES ALIMENTATION:\n  • ${M}x ${getPowerCable()} (${powerCableLength})\n`;
     if (cascadeMode) {
         list += `\n🌐 CÂBLES RÉSEAU:\n  • 1x ${getNetworkCable()} (${networkCableLength})\n`;
-        if (M > 1) list += `\n🔗 CÂBLES CASCADE:\n  • ${M-1}x ${getCascadeCable()} (2m)\n`;
+        if (M > 1) list += `\n🔗 CÂBLES CASCADE:\n  • ${M-1}x ${getCascadeCable()} (${cascadeCableLength})\n`;
     } else {
         list += `\n🌐 CÂBLES RÉSEAU:\n  • ${M}x ${getNetworkCable()} (${networkCableLength})\n`;
     }
