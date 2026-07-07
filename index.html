@@ -527,8 +527,8 @@ const SC = {
     POWER_CX: 590,
     POWER_R:  34,
     PC_CX:    575,
-    PC_W:     110,
-    PC_H:     68,
+    PC_W:     64,
+    PC_H:     42,
     SVG_W:    720
 };
 
@@ -562,6 +562,20 @@ function laptopSVG(x, y, w, h) {
          + `<rect x="${x+4}" y="${y+4}" width="${w-8}" height="${sh-8}" rx="2" fill="#93c5fd"/>`
          + `<rect x="${bx}" y="${y+sh+1}" width="${bw}" height="${bh}" rx="2" fill="#d1d5db" stroke="#9ca3af" stroke-width="1.5"/>`
          + `<text x="${x+w/2}" y="${y+sh+bh+15}" text-anchor="middle" font-size="10" fill="#555" font-family="Segoe UI,Arial,sans-serif" font-weight="600">PC / PLC</text>`;
+}
+
+/* Icône éclair SVG (remplace l'emoji ⚡ peu fiable) */
+function powerIconSVG(cx, cy, r) {
+    const pts = [
+        [cx+3,  cy-r+6],
+        [cx-2,  cy-1],
+        [cx+4,  cy-1],
+        [cx-3,  cy+r-6],
+        [cx+2,  cy+1],
+        [cx-4,  cy+1]
+    ].map(p => p.join(',')).join(' ');
+    return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/>`
+         + `<polygon points="${pts}" fill="white" stroke="none"/>`;
 }
 
 /* Géométrie d'un module (y top + midY) */
@@ -771,7 +785,7 @@ function updateSchema() {
     const POWER_CX = Math.round(SC.POWER_CX * xScale);
     const POWER_R  = SC.POWER_R;
     const PC_CX    = Math.round(SC.PC_CX * xScale);
-    const PC_W     = Math.round(SC.PC_W  * xScale);
+    const PC_W     = SC.PC_W;   /* taille fixe, pas de scaling */
     const PC_H     = SC.PC_H;
 
     const POW_CY = Math.round(TOP_PAD / 2);
@@ -841,8 +855,7 @@ function updateSchema() {
         p.push(svgLabel(Math.round((MOD_RIGHT + TURN_X) / 2), powPortY - 10, `${getPowerCable()} • ${powerCableLength}`, '#3b82f6'));
 
         /* Icône alimentation */
-        p.push(`<circle cx="${POWER_CX}" cy="${POW_CY}" r="${POWER_R}" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/>`);
-        p.push(`<text x="${POWER_CX}" y="${POW_CY + 9}" text-anchor="middle" dominant-baseline="middle" font-size="24">⚡</text>`);
+        p.push(powerIconSVG(POWER_CX, POW_CY, POWER_R));
 
         /* ── Réseau (vert) → Dernier module ── */
         const mLast = _modGeom(M - 1);
@@ -916,8 +929,7 @@ function updateSchema() {
             /* Câble alimentation (bleu) */
             p.push(`<polyline points="${MOD_RIGHT},${powPortY} ${TX_B},${powPortY} ${TX_B},${powIconY} ${POWER_CX - POWER_R},${powIconY}" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`);
             p.push(svgLabel(Math.round((MOD_RIGHT + TX_B) / 2), powPortY + powLblDY, `${getPowerCable()} • ${powerCableLength}`, '#3b82f6'));
-            p.push(`<circle cx="${POWER_CX}" cy="${powIconY}" r="${POWER_R}" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/>`);
-            p.push(`<text x="${POWER_CX}" y="${powIconY + 9}" text-anchor="middle" dominant-baseline="middle" font-size="24">⚡</text>`);
+            p.push(powerIconSVG(POWER_CX, powIconY, POWER_R));
 
             /* Câble réseau (vert) */
             p.push(`<polyline points="${MOD_RIGHT},${netPortY} ${TX_G},${netPortY} ${TX_G},${netIconY} ${PC_CX - PC_W/2},${netIconY}" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`);
