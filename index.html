@@ -146,11 +146,57 @@
         /* Schema section — fond blanc */
         .schema-section {
             flex: 1; background: #ffffff; border-radius: 10px;
-            padding: 10px; border: 1px solid #333; overflow: auto;
+            padding: 10px; border: 1px solid #333; overflow: hidden;
+            display: flex; flex-direction: column;
         }
+        .schema-toolbar {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 8px; flex-shrink: 0;
+        }
+        .schema-toolbar-title {
+            font-size: 0.82em; font-weight: 600; color: #374151;
+        }
+        .schema-toolbar-btns { display: flex; gap: 6px; }
+        .schema-btn {
+            background: #f3f4f6; border: 1px solid #d1d5db;
+            border-radius: 6px; padding: 5px 10px; cursor: pointer;
+            font-size: 0.78em; color: #374151; transition: all 0.2s;
+            display: flex; align-items: center; gap: 4px; font-weight: 600;
+        }
+        .schema-btn:hover { background: #1d4ed8; color: white; border-color: #1d4ed8; }
+
+        /* Modal plein écran */
+        .schema-modal {
+            display: none; position: fixed; inset: 0; z-index: 9999;
+            background: rgba(0,0,0,0.88);
+            align-items: center; justify-content: center;
+        }
+        .schema-modal.open { display: flex; }
+        .schema-modal-inner {
+            background: white; border-radius: 12px;
+            width: 96vw; height: 94vh;
+            position: relative; padding: 44px 12px 12px;
+            overflow: hidden; display: flex; flex-direction: column;
+        }
+        .schema-modal-bar {
+            position: absolute; top: 0; left: 0; right: 0; height: 40px;
+            background: #1a1a1a; border-radius: 12px 12px 0 0;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 12px;
+        }
+        .schema-modal-bar-title { color: #9ca3af; font-size: 0.82em; font-weight: 600; }
+        .schema-modal-bar-btns { display: flex; gap: 6px; }
+        .schema-modal-close {
+            background: #374151; color: white; border: none;
+            border-radius: 5px; padding: 4px 10px; cursor: pointer;
+            font-weight: 600; font-size: 0.78em;
+        }
+        .schema-modal-close:hover { background: #ef4444; }
+        .schema-modal-content { flex: 1; overflow: auto; }
+        .schema-modal-content svg { max-width: 100%; height: auto; display: block; }
 
         .schema-svg-wrap {
-            overflow: auto; min-height: 200px;
+            flex: 1; overflow: auto; min-height: 0;
             display: flex; align-items: flex-start; justify-content: flex-start;
         }
 
@@ -319,6 +365,14 @@
 
     <!-- Schéma -->
     <div class="schema-section">
+        <div class="schema-toolbar">
+            <span class="schema-toolbar-title">📐 Schéma de câblage</span>
+            <div class="schema-toolbar-btns">
+                <button class="schema-btn" onclick="downloadSchema('svg')" title="Télécharger en SVG">⬇ SVG</button>
+                <button class="schema-btn" onclick="downloadSchema('png')" title="Télécharger en PNG">⬇ PNG</button>
+                <button class="schema-btn" onclick="expandSchema()" title="Plein écran">⛶ Agrandir</button>
+            </div>
+        </div>
         <div id="schemaContent" class="schema-svg-wrap">
             <div class="empty-state">
                 <div class="empty-state-icon">🔌</div>
@@ -328,6 +382,21 @@
         </div>
     </div>
 
+</div>
+
+<!-- Modal plein écran -->
+<div class="schema-modal" id="schemaModal" onclick="onModalBackdrop(event)">
+    <div class="schema-modal-inner">
+        <div class="schema-modal-bar">
+            <span class="schema-modal-bar-title">📐 Schéma de câblage — Plein écran</span>
+            <div class="schema-modal-bar-btns">
+                <button class="schema-btn" onclick="downloadSchema('svg')" style="background:#2a2a2a;color:#fff;border-color:#444;">⬇ SVG</button>
+                <button class="schema-btn" onclick="downloadSchema('png')" style="background:#2a2a2a;color:#fff;border-color:#444;">⬇ PNG</button>
+                <button class="schema-modal-close" onclick="closeSchemaModal()">✕ Fermer</button>
+            </div>
+        </div>
+        <div class="schema-modal-content" id="schemaModalContent"></div>
+    </div>
 </div>
 
 <script>
@@ -991,6 +1060,75 @@ function exportShoppingList() {
 }
 
 init();
+
+/* ── Schéma : agrandir & télécharger ──────────────────────────────── */
+function expandSchema() {
+    const src = document.getElementById('schemaContent').querySelector('svg');
+    if (!src) { showToast('⚠️ Aucun schéma à afficher', '#f59e0b'); return; }
+    const clone = src.cloneNode(true);
+    clone.style.maxWidth  = '100%';
+    clone.style.height    = 'auto';
+    clone.removeAttribute('width');
+    const modal = document.getElementById('schemaModalContent');
+    modal.innerHTML = '';
+    modal.appendChild(clone);
+    document.getElementById('schemaModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSchemaModal() {
+    document.getElementById('schemaModal').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+function onModalBackdrop(e) {
+    if (e.target === document.getElementById('schemaModal')) closeSchemaModal();
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSchemaModal(); });
+
+function downloadSchema(format) {
+    const svg = document.querySelector('#schemaContent svg');
+    if (!svg) { showToast('⚠️ Aucun schéma à télécharger', '#f59e0b'); return; }
+    const serializer = new XMLSerializer();
+    const svgStr = serializer.serializeToString(svg);
+    const w = svg.width.baseVal.value  || 720;
+    const h = svg.height.baseVal.value || 500;
+
+    if (format === 'svg') {
+        const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+        const url  = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'schema-cablage.svg'; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast('✅ SVG téléchargé !');
+        return;
+    }
+
+    /* PNG : rasterisation via canvas */
+    const canvas = document.createElement('canvas');
+    const scale  = 2; // @2x pour qualité
+    canvas.width  = w * scale;
+    canvas.height = h * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, w, h);
+
+    const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const img  = new Image();
+    img.onload = () => {
+        ctx.drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        const a = document.createElement('a');
+        a.href = canvas.toDataURL('image/png');
+        a.download = 'schema-cablage.png'; a.click();
+        showToast('✅ PNG téléchargé !');
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); showToast('⚠️ Erreur export PNG', '#f59e0b'); };
+    img.src = url;
+}
 </script>
 </body>
 </html>
