@@ -24,8 +24,8 @@
             position: fixed; top: 0; left: 0;
             width: 100%; height: 100%;
             background:
-                radial-gradient(circle at 20% 50%, rgba(29,78,216,0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 50%, rgba(29,78,216,0.1) 0%, transparent 50%);
+                radial-gradient(circle at 20% 50%, rgba(59,130,246,0.12) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(59,130,246,0.12) 0%, transparent 50%);
             animation: pulse 4s ease-in-out infinite;
             pointer-events: none; z-index: 0;
         }
@@ -40,12 +40,12 @@
         .header {
             background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
             padding: 8px 18px; border-radius: 10px; margin-bottom: 8px;
-            border: 1px solid #1d4ed8;
-            box-shadow: 0 0 20px rgba(29,78,216,0.2);
+            border: 1px solid #3b82f6;
+            box-shadow: 0 0 20px rgba(59,130,246,0.2);
         }
         .header h1 {
             font-size: 1.15em;
-            background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             margin-bottom: 1px;
         }
@@ -62,8 +62,8 @@
         }
         .selection-column { display: flex; flex-direction: column; gap: 8px; }
         .selection-title {
-            font-size: 0.9em; color: #1d4ed8; font-weight: 600;
-            padding-bottom: 6px; border-bottom: 2px solid #1d4ed8;
+            font-size: 0.9em; color: #3b82f6; font-weight: 600;
+            padding-bottom: 6px; border-bottom: 2px solid #3b82f6;
         }
 
         select {
@@ -72,8 +72,8 @@
             border-radius: 8px; color: white; font-size: 0.85em;
             cursor: pointer; transition: all 0.3s;
         }
-        select:hover  { border-color: #1d4ed8; }
-        select:focus  { outline: none; border-color: #1d4ed8; box-shadow: 0 0 0 3px rgba(29,78,216,0.1); }
+        select:hover  { border-color: #3b82f6; }
+        select:focus  { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
 
         .models-grid {
             display: grid; grid-template-columns: repeat(5,1fr);
@@ -85,11 +85,11 @@
             text-align: center; display: flex; flex-direction: column;
             align-items: center; gap: 3px;
         }
-        .model-card:hover  { border-color: #1d4ed8; background: #333; transform: translateY(-2px); }
+        .model-card:hover  { border-color: #3b82f6; background: #333; transform: translateY(-2px); }
         .model-card.selected {
-            border-color: #1d4ed8;
-            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-            box-shadow: 0 0 10px rgba(29,78,216,0.3);
+            border-color: #3b82f6;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            box-shadow: 0 0 10px rgba(59,130,246,0.3);
         }
         .model-card-img {
             width: 40px; height: 34px; object-fit: contain;
@@ -103,16 +103,16 @@
             border-radius: 6px; color: white; cursor: pointer;
             font-size: 0.8em; font-weight: 600; transition: all 0.3s;
         }
-        .length-btn:hover  { border-color: #1d4ed8; }
-        .length-btn.active { background: #1d4ed8; border-color: #1d4ed8; }
+        .length-btn:hover  { border-color: #3b82f6; }
+        .length-btn.active { background: #3b82f6; border-color: #3b82f6; }
 
         .btn-add {
-            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             color: white; border: none; padding: 8px 12px;
             border-radius: 8px; font-weight: 600; cursor: pointer;
             transition: all 0.3s; font-size: 0.85em;
         }
-        .btn-add:hover    { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(29,78,216,0.4); }
+        .btn-add:hover    { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(59,130,246,0.4); }
         .btn-add:disabled { background: #333; cursor: not-allowed; transform: none; }
         .btn-add.success  { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
 
@@ -122,7 +122,7 @@
         }
         .sensor-tag {
             background: #2a2a2a; padding: 6px 10px; border-radius: 7px;
-            border-left: 4px solid #1d4ed8;
+            border-left: 4px solid #3b82f6;
             display: flex; justify-content: space-between; align-items: center;
             transition: all 0.3s; font-size: 0.82em;
         }
@@ -131,11 +131,11 @@
         .sensor-tag-name  { font-weight: 600; margin-bottom: 2px; }
         .sensor-tag-desc  { font-size: 0.85em; color: #9ca3af; }
         .btn-remove {
-            background: #1e40af; border: none; color: white;
+            background: #2563eb; border: none; color: white;
             width: 25px; height: 25px; border-radius: 5px;
             cursor: pointer; font-size: 1em; transition: all 0.2s;
         }
-        .btn-remove:hover { background: #1d4ed8; }
+        .btn-remove:hover { background: #3b82f6; }
 
         .badge {
             display: inline-block; padding: 2px 6px; border-radius: 8px;
@@ -163,7 +163,7 @@
             font-size: 0.78em; color: #374151; transition: all 0.2s;
             display: flex; align-items: center; gap: 4px; font-weight: 600;
         }
-        .schema-btn:hover { background: #1d4ed8; color: white; border-color: #1d4ed8; }
+        .schema-btn:hover { background: #3b82f6; color: white; border-color: #3b82f6; }
 
         /* Modal plein écran */
         .schema-modal {
@@ -210,7 +210,7 @@
 
         ::-webkit-scrollbar       { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #1d4ed8; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 3px; }
 
         .btn-export {
             background: #10b981; color: white; border: none;
@@ -722,7 +722,7 @@ function updateNQModules() {
         const badge = cascadeMode && i > 0
             ? '<span class="badge" style="background:#8b5cf6;">CASCADE</span>'
             : (!cascadeMode ? '<span class="badge" style="background:#f59e0b;">AUTONOME</span>' : '');
-        html += `<div class="sensor-tag" style="border-left-color:#1d4ed8;">
+        html += `<div class="sensor-tag" style="border-left-color:#3b82f6;">
             <div class="sensor-tag-info">
                 <div class="sensor-tag-name">⚡ ${selectedNQModel} #${i+1}${badge}</div>
                 <div class="sensor-tag-desc">${used}/${getPortsPerModule()} ports • ${getPortsPerModule()-used} libre(s)</div>
@@ -746,7 +746,7 @@ function updateSchema() {
     }
 
     /* ── Dimensions dynamiques ── */
-    const cW = Math.max(container.clientWidth  || 720, 500);
+    const cW = Math.max(Math.round((container.clientWidth || 720) * 0.95), 500);
     const cH = Math.max(container.clientHeight || 600, 300);
     const xScale = cW / 720;
 
@@ -1018,7 +1018,7 @@ function getCascadeCommCable() {
 
 /* ── Export ────────────────────────────────────────────────────────── */
 function exportShoppingList() {
-    if (!selectedSensors.length) { showToast('⚠️ Aucun capteur sélectionné','#1d4ed8'); return; }
+    if (!selectedSensors.length) { showToast('⚠️ Aucun capteur sélectionné','#3b82f6'); return; }
     const M = Math.ceil(selectedSensors.length / getPortsPerModule());
     let list = '═══════════════════════════════════════\n  LISTE DE COURSES - KEYENCE\n═══════════════════════════════════════\n\n';
 
@@ -1066,9 +1066,13 @@ function expandSchema() {
     const src = document.getElementById('schemaContent').querySelector('svg');
     if (!src) { showToast('⚠️ Aucun schéma à afficher', '#f59e0b'); return; }
     const clone = src.cloneNode(true);
-    clone.style.maxWidth  = '100%';
-    clone.style.height    = 'auto';
-    clone.removeAttribute('width');
+    /* Récupère les dimensions originales et ajoute un viewBox pour le scaling responsive */
+    const w = parseFloat(src.getAttribute('width'))  || src.width.baseVal.value  || 720;
+    const h = parseFloat(src.getAttribute('height')) || src.height.baseVal.value || 500;
+    if (!clone.getAttribute('viewBox')) clone.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    clone.setAttribute('width',  '100%');
+    clone.setAttribute('height', '100%');
+    clone.style.cssText = 'display:block; max-width:100%; height:auto;';
     const modal = document.getElementById('schemaModalContent');
     modal.innerHTML = '';
     modal.appendChild(clone);
