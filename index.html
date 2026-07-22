@@ -387,8 +387,7 @@
         <div class="schema-toolbar">
             <span class="schema-toolbar-title">📐 Schéma de câblage</span>
             <div class="schema-toolbar-btns">
-                <button class="schema-btn" onclick="downloadSchema('svg')" title="Télécharger en SVG">⬇ SVG</button>
-                <button class="schema-btn" onclick="downloadSchema('png')" title="Télécharger en PNG">⬇ PNG</button>
+                <button class="schema-btn" onclick="downloadSchema('png')" title="Enregistrer en PNG">⬇ PNG</button>
                 <button class="schema-btn" onclick="expandSchema()" title="Plein écran">⛶ Agrandir</button>
             </div>
         </div>
@@ -403,13 +402,28 @@
 
 </div>
 
+<!-- Modal aperçu liste de courses -->
+<div class="schema-modal" id="shoppingModal" onclick="if(event.target===this)closeShoppingModal()">
+    <div class="schema-modal-inner" style="max-width:560px;width:94vw;">
+        <div class="schema-modal-bar">
+            <span class="schema-modal-bar-title">📋 Liste de courses</span>
+            <div class="schema-modal-bar-btns">
+                <button class="schema-btn" onclick="copyShoppingList()" style="background:#2a2a2a;color:#fff;border-color:#444;" id="copyBtn">⎘ Copier</button>
+                <button class="schema-modal-close" onclick="closeShoppingModal()">✕ Fermer</button>
+            </div>
+        </div>
+        <div class="schema-modal-content" style="padding:10px 4px 4px;">
+            <pre id="shoppingModalText" style="white-space:pre-wrap;font-family:monospace;font-size:0.82em;color:#1f2937;line-height:1.55;padding:12px 16px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb;overflow-y:auto;max-height:calc(94vh - 100px);"></pre>
+        </div>
+    </div>
+</div>
+
 <!-- Modal plein écran -->
 <div class="schema-modal" id="schemaModal" onclick="onModalBackdrop(event)">
     <div class="schema-modal-inner">
         <div class="schema-modal-bar">
             <span class="schema-modal-bar-title">📐 Schéma de câblage — Plein écran</span>
             <div class="schema-modal-bar-btns">
-                <button class="schema-btn" onclick="downloadSchema('svg')" style="background:#2a2a2a;color:#fff;border-color:#444;">⬇ SVG</button>
                 <button class="schema-btn" onclick="downloadSchema('png')" style="background:#2a2a2a;color:#fff;border-color:#444;">⬇ PNG</button>
                 <button class="schema-modal-close" onclick="closeSchemaModal()">✕ Fermer</button>
             </div>
@@ -1082,12 +1096,24 @@ function exportShoppingList() {
     }
     list += `\n═══════════════════════════════════════\nTotal capteurs: ${selectedSensors.length} | Modules NQ: ${M}\n═══════════════════════════════════════\n`;
 
-    const a = Object.assign(document.createElement('a'), {
-        href: URL.createObjectURL(new Blob([list],{type:'text/plain'})),
-        download: `KEYENCE_Liste_Courses_${new Date().toISOString().split('T')[0]}.txt`
+    document.getElementById('shoppingModalText').textContent = list;
+    document.getElementById('copyBtn').textContent = '⎘ Copier';
+    document.getElementById('shoppingModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeShoppingModal() {
+    document.getElementById('shoppingModal').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+function copyShoppingList() {
+    const text = document.getElementById('shoppingModalText').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.textContent = '✅ Copié !';
+        setTimeout(() => { btn.textContent = '⎘ Copier'; }, 2000);
     });
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    showToast('✅ Liste exportée !');
 }
 
 init();
