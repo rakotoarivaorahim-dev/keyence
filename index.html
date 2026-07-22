@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -238,9 +239,27 @@
         }
         .toast.show { transform: translateY(0); opacity: 1; }
 
-        @media (max-width: 1400px) {
-            .selection-grid  { grid-template-columns: 1fr; }
-            .models-grid     { grid-template-columns: repeat(3,1fr); }
+        /* Tablette paysage (769px – 1200px) : 3 colonnes compactes */
+        @media (max-width: 1200px) {
+            .container        { padding: 5px 8px; }
+            .header           { padding: 6px 12px; margin-bottom: 6px; }
+            .header h1        { font-size: 1em; }
+            .header p         { font-size: 0.72em; }
+            .selection-section { padding: 7px 10px; margin-bottom: 6px; }
+            .selection-grid   { grid-template-columns: 170px 1fr 190px; gap: 8px; }
+            .models-grid      { grid-template-columns: repeat(4,1fr); max-height: 100px; }
+            .selected-sensors-list { max-height: 120px; }
+            .model-card-img   { width: 32px; height: 26px; }
+            .model-name       { font-size: 0.65em; }
+            .schema-section   { padding: 8px; }
+        }
+
+        /* Tablette portrait + mobile (≤ 768px) : colonne unique */
+        @media (max-width: 768px) {
+            .selection-grid   { grid-template-columns: 1fr; }
+            .models-grid      { grid-template-columns: repeat(3,1fr); }
+            .container        { height: auto; }
+            .schema-section   { min-height: 400px; }
         }
     </style>
 </head>
