@@ -477,13 +477,10 @@ const sensorDatabase = {
         {code:'FD-R200', name:'FD-R200', connector:'M12', pins:4, ioLink:true}
     ]},
     'FR': { name:'FR', fullName:'Capteur de niveau', models:[
-        {code:'FR-S01',    name:'FR-S01',    connector:'M12', pins:8, ioLink:true},
-        {code:'FR-SH01',   name:'FR-SH01',   connector:'M12', pins:8, ioLink:true},
-        {code:'FR-LM20',   name:'FR-LM20',   connector:'M12', pins:8, ioLink:true},
-        {code:'FR-LP20',   name:'FR-LP20',   connector:'M12', pins:8, ioLink:true},
-        {code:'FR-LS20',   name:'FR-LS20',   connector:'M12', pins:8, ioLink:true},
-        {code:'FR-LEX20L', name:'FR-LEX20L', connector:'M12', pins:8, ioLink:true},
-        {code:'FR-LW20L',  name:'FR-LW20L',  connector:'M12', pins:8, ioLink:true}
+        {code:'FR-S01',  name:'FR-S01',  connector:'M12', pins:8, ioLink:true},
+        {code:'FR-LM20', name:'FR-LM20', connector:'M12', pins:8, ioLink:true},
+        {code:'FR-LP20', name:'FR-LP20', connector:'M12', pins:8, ioLink:true},
+        {code:'FR-LS20', name:'FR-LS20', connector:'M12', pins:8, ioLink:true}
     ]},
     'MP-F': { name:'MP-F', fullName:'Débitmètre MP-F', models:[
         {code:'MP-FR10R', name:'MP-FR10R', connector:'M12', pins:8, ioLink:true},
@@ -493,9 +490,7 @@ const sensorDatabase = {
         {code:'MP-FR80',  name:'MP-FR80',  connector:'M12', pins:8, ioLink:true}
     ]},
     'FD-X': { name:'FD-X', fullName:'Débitmètre à clipser', models:[
-        {code:'FD-XA1', name:'FD-XA1', connector:'M12', pins:4, ioLink:true},
-        {code:'FD-XS8', name:'FD-XS8', connector:'M12', pins:4, ioLink:true},
-        {code:'FD-X',   name:'FD-X',   connector:'M12', pins:4, ioLink:true}
+        {code:'FD-XA1', name:'FD-XA1', connector:'M12', pins:4, ioLink:true}
     ]},
     'FI-T': { name:'FI-T', fullName:'Débitmètre insertion', models:[
         {code:'FI-T8',   name:'FI-T8',   connector:'M8', pins:4, ioLink:true},
@@ -509,11 +504,10 @@ const sensorDatabase = {
         {code:'FI-1000',  name:'FI-1000',  connector:'M12', pins:4, ioLink:true},
         {code:'FI-C40F',  name:'FI-C40F',  connector:'M12', pins:4, ioLink:true}
     ]},
-    'FD-E': { name:'FD-E', fullName:'Débitmètre FD-E', models:[
-        {code:'FD-ECA1',  name:'FD-ECA1',  connector:'M12', pins:8, ioLink:true},
-        {code:'FD-ECA1C', name:'FD-ECA1C', connector:'M12', pins:8, ioLink:true},
-        {code:'FD-EPA1',  name:'FD-EPA1',  connector:'M12', pins:8, ioLink:true},
-        {code:'FD-EPA1C', name:'FD-EPA1C', connector:'M12', pins:8, ioLink:true}
+    'FD-E': { name:'FD-E', fullName:'Débitmètre FD-E (ampli)', models:[
+        {code:'FD-ECA1C', name:'FD-ECA1C', connector:'M8', pins:4, ioLink:true},
+        {code:'FD-EPA1C', name:'FD-EPA1C', connector:'M8', pins:4, ioLink:true},
+        {code:'FR-SA1C',  name:'FR-SA1C',  connector:'M8', pins:4, ioLink:true}
     ]},
     'FD-Q': { name:'FD-Q', fullName:'Débitmètre à clipser', models:[
         {code:'FD-Q10C', name:'FD-Q10C', connector:'M12', pins:4, ioLink:true},
@@ -850,9 +844,9 @@ function updateSchema() {
         p.push(`<line x1="${IMG_X + IMG_W + 2}" y1="${cy}" x2="${BUS_X}" y2="${cy}" stroke="#ccc" stroke-width="1.5"/>`);
 
         /* Label câble sur la ligne */
-        const ci  = getCableInfo(s);
-        const lx  = Math.round((IMG_X + IMG_W + 2 + BUS_X) / 2);
-        const lbl = ci.qty > 1 ? `${ci.qty}× ${ci.model} • ${s.cableLength}` : `${ci.model} • ${s.cableLength}`;
+        const ciArr = getCableInfo(s);
+        const lx    = Math.round((IMG_X + IMG_W + 2 + BUS_X) / 2);
+        const lbl   = ciArr.map(c => c.qty > 1 ? `${c.qty}× ${c.model}` : c.model).join('+') + ` • ${s.cableLength}`;
         p.push(svgLabel(lx, cy - 8, lbl, '#aaa'));
     }
 
@@ -978,6 +972,7 @@ function updateSchema() {
 }
 
 /* ── Câbles capteurs ───────────────────────────────────────────────── */
+/* Retourne un tableau [{model, qty, type}] — peut avoir 2 entrées (connecteur + rallonge) */
 function getCableInfo(sensor) {
     const len   = sensor.cableLength;
     const mat   = sensor.cableMaterial || 'pvc';
@@ -986,49 +981,72 @@ function getCableInfo(sensor) {
     const isPUR = mat === 'pur';
     const isL   = shape === 'l';
 
-    // Qty pour les rallonges (10m = 2×5m, 20m = 4×5m ; base = 5m)
+    // Rallonges M12 4p (Cable A) : toujours plus que moins — unité 5m, qty par longueur demandée
     const qty5  = { '2m':1, '5m':1, '10m':2, '20m':4 };
-    // Qty pour les câbles disponibles en 10m (10m = 1×10m, 20m = 2×10m)
-    const qty10 = { '2m':1, '5m':1, '10m':1, '20m':2 };
-    // Longueur unitaire pour les séries ne dépassant pas 5m par câble
     const unit5 = (len === '10m' || len === '20m') ? '5m' : len;
 
-    // ── FD-H, FI-C (FI-1000) → FD-HCC (connecteur M12 8 broches capteur) ──
-    if (sName === 'FD-H' || sName === 'FI-C') {
+    // Rallonge Cable A (M12 4p PVC)
+    const extA = unit5 === '2m' ? 'OP-85503' : 'OP-85504';
+    const qtyA = qty5[len] || 1;
+
+    // Rallonge Cable B (M8 4p PVC)
+    const extB = unit5 === '2m' ? 'OP-88456' : 'OP-88457';
+    const qtyB = qty5[len] || 1;
+
+    // ── FD-H → FDHCC0 (connecteur) + rallonge Cable A (M12 4p) ──
+    if (sName === 'FD-H') {
+        return [
+            { model: 'FD-HCC0', qty: 1,    type: 'Connecteur FD-H' },
+            { model: extA,       qty: qtyA, type: 'Cable A M12 4p ext.' }
+        ];
+    }
+
+    // ── FI-C → FD-HCC (inchangé) ──
+    if (sName === 'FI-C') {
+        const qty10 = { '2m':1, '5m':1, '10m':1, '20m':2 };
         const model = (len === '10m' || len === '20m') ? 'FD-HCC10' : 'FD-HCC2';
-        return { model, qty: qty10[len] || 1, type: 'M12 8p femelle → M12 4p mâle' };
+        return [{ model, qty: qty10[len] || 1, type: 'M12 8p → M12 4p' }];
     }
 
-    // ── MP-F → OP-88761 (5m, à chaîner pour 10m/20m) ──
+    // ── FD-X → OP-88296 (connecteur) + rallonge Cable A (M12 4p) ──
+    if (sName === 'FD-X') {
+        return [
+            { model: 'OP-88296', qty: 1,    type: 'Adaptateur FD-X' },
+            { model: extA,       qty: qtyA, type: 'Cable A M12 4p ext.' }
+        ];
+    }
+
+    // ── MP-F → OP-88761 (5m, à chaîner) ──
     if (sName === 'MP-F') {
-        return { model: 'OP-88761', qty: qty5[len] || 1, type: 'M12 8p femelle → M12 4p mâle' };
+        return [{ model: 'OP-88761', qty: qty5[len] || 1, type: 'M12 8p → M12 4p' }];
     }
 
-    // ── Autres M12 8p (FD-E, FR…) → OP-88444/445/446 ──
+    // ── Autres M12 8p (FR…) → OP-88444/445/446 ──
     if (sensor.connector === 'M12' && sensor.pins === 8) {
+        const qty10 = { '2m':1, '5m':1, '10m':1, '20m':2 };
         const model = len === '2m' ? 'OP-88444' : len === '5m' ? 'OP-88445' : 'OP-88446';
-        return { model, qty: qty10[len] || 1, type: 'M12 8p femelle → M12 4p mâle' };
+        return [{ model, qty: qty10[len] || 1, type: 'M12 8p → M12 4p' }];
     }
 
-    // ── M12 4p ──
+    // ── M12 4p (Cable A, standard) ──
     if (sensor.connector === 'M12' && sensor.pins === 4) {
         let model;
-        if (isPUR && isL)  model = 'OP-88455';                                   // PUR en L (2m uniquement)
-        else if (isPUR)    model = unit5 === '2m' ? 'OP-88075' : 'OP-88076';     // PUR droit
-        else               model = unit5 === '2m' ? 'OP-85503' : 'OP-85504';     // PVC droit
-        return { model, qty: qty5[len] || 1, type: 'M12 4p femelle → M12 mâle' };
+        if (isPUR && isL)  model = 'OP-88455';
+        else if (isPUR)    model = unit5 === '2m' ? 'OP-88075' : 'OP-88076';
+        else               model = extA;
+        return [{ model, qty: qtyA, type: 'Cable A M12 4p' }];
     }
 
-    // ── M8 4p ──
+    // ── M8 4p (Cable B — amplis FD-ECA1C / FD-EPA1C / FR-SA1C) ──
     if (sensor.connector === 'M8' && sensor.pins === 4) {
         let model;
-        if (isPUR && isL)  model = unit5 === '2m' ? 'OP-88073' : 'OP-88074';    // PUR en L
-        else if (isPUR)    model = unit5 === '2m' ? 'OP-88071' : 'OP-88072';    // PUR droit
-        else               model = unit5 === '2m' ? 'OP-88456' : 'OP-88457';    // PVC droit
-        return { model, qty: qty5[len] || 1, type: 'M8 femelle → M12 mâle' };
+        if (isPUR && isL)  model = unit5 === '2m' ? 'OP-88073' : 'OP-88074';
+        else if (isPUR)    model = unit5 === '2m' ? 'OP-88071' : 'OP-88072';
+        else               model = extB;
+        return [{ model, qty: qtyB, type: 'Cable B M8 4p' }];
     }
 
-    return { model: 'OP-88071', qty: 1, type: 'M8 femelle → M12 mâle' };
+    return [{ model: 'OP-88071', qty: 1, type: 'M8 4p' }];
 }
 
 function getPowerCable() {
@@ -1075,11 +1093,13 @@ function exportShoppingList() {
     list += '\n🔌 CÂBLES CAPTEURS:\n';
     const cc = {};
     selectedSensors.forEach(s => {
-        const ci = getCableInfo(s);
+        const ciArr = getCableInfo(s);
         const mat = (s.cableMaterial||'pvc').toUpperCase();
         const shp = s.cableShape === 'l' ? ' En L' : ' Droit';
-        const k = `${ci.model} (${ci.type}, ${s.cableLength} ${mat}${shp})`;
-        cc[k] = (cc[k]||0) + ci.qty;
+        ciArr.forEach(ci => {
+            const k = `${ci.model} (${ci.type}, ${s.cableLength} ${mat}${shp})`;
+            cc[k] = (cc[k]||0) + ci.qty;
+        });
     });
     Object.entries(cc).forEach(([n,c]) => { list += `  • ${c}x ${n}\n`; });
 
