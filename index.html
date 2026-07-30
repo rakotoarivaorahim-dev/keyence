@@ -993,11 +993,12 @@ function getCableInfo(sensor) {
     const extB = unit5 === '2m' ? 'OP-88456' : 'OP-88457';
     const qtyB = qty5[len] || 1;
 
-    // ── FD-H → FDHCC0 (connecteur) + rallonge Cable A (M12 4p) ──
+    // ── FD-H → FDHCC0 (connecteur) + rallonge Cable A (M12 4p, PVC ou PUR) ──
     if (sName === 'FD-H') {
+        const extH = isPUR ? (unit5 === '2m' ? 'OP-88075' : 'OP-88076') : extA;
         return [
             { model: 'FD-HCC0', qty: 1,    type: 'Connecteur FD-H' },
-            { model: extA,       qty: qtyA, type: 'Cable A M12 4p ext.' }
+            { model: extH,       qty: qtyA, type: `Cable A M12 4p ${isPUR ? 'PUR' : 'PVC'}` }
         ];
     }
 
@@ -1008,11 +1009,12 @@ function getCableInfo(sensor) {
         return [{ model, qty: qty10[len] || 1, type: 'M12 8p → M12 4p' }];
     }
 
-    // ── FD-X → OP-88296 (connecteur) + rallonge Cable A (M12 4p) ──
+    // ── FD-X → OP-88296 (connecteur) + rallonge Cable A (M12 4p, PVC ou PUR) ──
     if (sName === 'FD-X') {
+        const extX = isPUR ? (unit5 === '2m' ? 'OP-88075' : 'OP-88076') : extA;
         return [
             { model: 'OP-88296', qty: 1,    type: 'Adaptateur FD-X' },
-            { model: extA,       qty: qtyA, type: 'Cable A M12 4p ext.' }
+            { model: extX,       qty: qtyA, type: `Cable A M12 4p ${isPUR ? 'PUR' : 'PVC'}` }
         ];
     }
 
