@@ -18,7 +18,22 @@ persistance, la simplicité des requêtes avec jointures entre modules
 (Entreprise ↔ Contact ↔ Activité ↔ Application), et parce qu'il reste très
 simple à lancer et maintenir seul au quotidien.
 
-## Démarrage
+## Démarrage en un clic
+
+Après avoir récupéré ce dossier sur ta machine, double-clique sur le
+fichier correspondant à ton système :
+
+- **Windows** : `Demarrer-CRM.bat`
+- **macOS** : `Demarrer-CRM.command`
+- **Linux** : `demarrer-crm.sh` (le rendre exécutable une fois si besoin :
+  clic droit → Propriétés → Autoriser l'exécution, ou `chmod +x demarrer-crm.sh`)
+
+Le premier lancement installe les dépendances et construit l'application
+(peut prendre une minute), les suivants sont quasi instantanés. Le
+navigateur s'ouvre automatiquement sur le CRM. Pour arrêter, ferme la
+fenêtre de terminal qui s'est ouverte (ou Ctrl+C).
+
+## Démarrage manuel (développement)
 
 ```bash
 npm install
@@ -26,8 +41,8 @@ npm run dev
 ```
 
 Cela lance en parallèle le serveur API (port 3001) et le serveur de
-développement Vite (port 5173, avec proxy `/api` vers le backend). Ouvrir
-http://localhost:5173.
+développement Vite (port 5173, avec proxy `/api` vers le backend, et
+rechargement à chaud). Ouvrir http://localhost:5173.
 
 ## Production locale
 
