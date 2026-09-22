@@ -874,15 +874,26 @@ function updateSchema() {
     }
 
     if (cascadeMode) {
-        /* ── CASCADE : Alimentation → Module 1 ── */
-        const m0 = _modGeom(0);
-        const powPortY = m0.top + Math.round(MOD_H * 0.28);
+        const nGroups = Math.ceil(M / 3);
 
-        p.push(`<polyline points="${MOD_RIGHT},${powPortY} ${TURN_X},${powPortY} ${TURN_X},${POW_CY} ${POWER_CX - POWER_R},${POW_CY}" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`);
-        p.push(svgLabel(Math.round((MOD_RIGHT + TURN_X) / 2), powPortY - 10, `${getPowerCable()} • ${powerCableLength}`, '#3b82f6'));
+        /* ── Alimentation : 1 prise par groupe de 3 modules ── */
+        for (let g = 0; g < nGroups; g++) {
+            const mi = g * 3;
+            const mG = _modGeom(mi);
+            const powPortY = mG.top + Math.round(MOD_H * 0.28);
 
-        /* Icône alimentation */
-        p.push(powerIconSVG(POWER_CX, POW_CY, POWER_R));
+            if (g === 0) {
+                /* Premier groupe : remonte vers POW_CY (en haut) */
+                p.push(`<polyline points="${MOD_RIGHT},${powPortY} ${TURN_X},${powPortY} ${TURN_X},${POW_CY} ${POWER_CX - POWER_R},${POW_CY}" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`);
+                p.push(svgLabel(Math.round((MOD_RIGHT + TURN_X) / 2), powPortY - 10, `${getPowerCable()} • ${powerCableLength}`, '#3b82f6'));
+                p.push(powerIconSVG(POWER_CX, POW_CY, POWER_R));
+            } else {
+                /* Groupes suivants : câble horizontal vers droite */
+                p.push(`<line x1="${MOD_RIGHT}" y1="${powPortY}" x2="${POWER_CX - POWER_R}" y2="${powPortY}" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>`);
+                p.push(svgLabel(Math.round((MOD_RIGHT + POWER_CX) / 2), powPortY - 10, `${getPowerCable()} • ${powerCableLength}`, '#3b82f6'));
+                p.push(powerIconSVG(POWER_CX, powPortY, POWER_R));
+            }
+        }
 
         /* ── Réseau (vert) → Dernier module ── */
         const mLast = _modGeom(M - 1);
@@ -902,11 +913,19 @@ function updateSchema() {
             const y1  = mA.top + MOD_H;
             const y2  = mB.top;
             const cy2 = Math.round((y1 + y2) / 2);
+            const samePowerGroup = Math.floor(mi / 3) === Math.floor((mi + 1) / 3);
 
-            p.push(`<line x1="${CAS_BX}" y1="${y1}" x2="${CAS_BX}" y2="${y2}" stroke="#3b82f6" stroke-width="2.5"/>`);
-            p.push(`<line x1="${CAS_GX}" y1="${y1}" x2="${CAS_GX}" y2="${y2}" stroke="#10b981" stroke-width="2.5"/>`);
-            p.push(svgLabel(CAS_BX + 36, cy2 - 9, `${getCascadePowerCable()} • ${cascadeCableLength}`, '#3b82f6'));
-            p.push(svgLabel(CAS_GX + 36, cy2 + 9, `${getCascadeCommCable()} • ${cascadeCableLength}`, '#10b981'));
+            if (samePowerGroup) {
+                /* Dans le même groupe : câble alimentation (bleu) + comm (vert) */
+                p.push(`<line x1="${CAS_BX}" y1="${y1}" x2="${CAS_BX}" y2="${y2}" stroke="#3b82f6" stroke-width="2.5"/>`);
+                p.push(`<line x1="${CAS_GX}" y1="${y1}" x2="${CAS_GX}" y2="${y2}" stroke="#10b981" stroke-width="2.5"/>`);
+                p.push(svgLabel(CAS_BX + 36, cy2 - 9, `${getCascadePowerCable()} • ${cascadeCableLength}`, '#3b82f6'));
+                p.push(svgLabel(CAS_GX + 36, cy2 + 9, `${getCascadeCommCable()} • ${cascadeCableLength}`, '#10b981'));
+            } else {
+                /* Entre groupes : comm (vert) uniquement, alimentation repart du secteur */
+                p.push(`<line x1="${CAS_GX}" y1="${y1}" x2="${CAS_GX}" y2="${y2}" stroke="#10b981" stroke-width="2.5"/>`);
+                p.push(svgLabel(CAS_GX + 36, cy2, `${getCascadeCommCable()} • ${cascadeCableLength}`, '#10b981'));
+            }
         }
     } else {
         /* ── AUTONOME ──────────────────────────────────────────────────
@@ -1106,11 +1125,14 @@ function exportShoppingList() {
     Object.entries(cc).forEach(([n,c]) => { list += `  • ${c}x ${n}\n`; });
 
     list += `\n⚡ MODULES NQ:\n  • ${M}x ${selectedNQModel}\n`;
-    list += `\n🔋 CÂBLES ALIMENTATION:\n  • ${M}x ${getPowerCable()} (${powerCableLength})\n`;
+    const nPowerFeeds = cascadeMode ? Math.ceil(M / 3) : M;
+    list += `\n🔋 CÂBLES ALIMENTATION:\n  • ${nPowerFeeds}x ${getPowerCable()} (${powerCableLength})\n`;
     if (cascadeMode) {
         list += `\n🌐 CÂBLES RÉSEAU:\n  • 1x ${getNetworkCable()} (${networkCableLength})\n`;
         if (M > 1) {
-            list += `\n🔗 CÂBLES CASCADE ALIMENTATION:\n  • ${M-1}x ${getCascadePowerCable()} (${cascadeCableLength})\n`;
+            const cascadePwrCount = M - Math.ceil(M / 3);
+            if (cascadePwrCount > 0)
+                list += `\n🔗 CÂBLES CASCADE ALIMENTATION:\n  • ${cascadePwrCount}x ${getCascadePowerCable()} (${cascadeCableLength})\n`;
             list += `\n🔗 CÂBLES CASCADE COMMUNICATION:\n  • ${M-1}x ${getCascadeCommCable()} (${cascadeCableLength})\n`;
         }
     } else {
